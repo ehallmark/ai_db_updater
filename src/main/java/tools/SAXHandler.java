@@ -1,4 +1,4 @@
-package tools;
+package main.java.tools;
 
 /**
  * Created by ehallmark on 1/3/17.

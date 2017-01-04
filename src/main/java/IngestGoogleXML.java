@@ -1,6 +1,8 @@
-import database.Database;
-import tools.SAXHandler;
-import tools.ZipHelper;
+package main.java;
+
+import main.java.database.Database;
+import main.java.tools.SAXHandler;
+import main.java.tools.ZipHelper;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -33,6 +35,13 @@ public class IngestGoogleXML {
                 // Commit results to DB and update last ingest table
                 Database.updateLastIngestedDate(lastIngestedDate);
                 lastIngestedDate = lastIngestedDate+1;
+                // don't over search days
+                if(lastIngestedDate%100 > 31) {
+                    lastIngestedDate = lastIngestedDate+100 - (lastIngestedDate%100);
+                }
+                if(lastIngestedDate%10000 > 1231) {
+                    lastIngestedDate = lastIngestedDate+10000 - (lastIngestedDate%10000);
+                }
 
                 // Load file from Google
                 try {
