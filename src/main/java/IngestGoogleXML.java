@@ -91,7 +91,6 @@ public class IngestGoogleXML {
 
                             if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
                                 Database.ingestRecords(handler.getPatentNumber(),handler.getFullDocuments());
-                                Database.commit();
                             }
 
                             lines.clear();
