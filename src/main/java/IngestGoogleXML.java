@@ -126,12 +126,11 @@ public class IngestGoogleXML {
                         lines.clear();
                         handler.reset();
                     }
-
-
-
+                    
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+
 
                 // Commit results to DB and update last ingest table
                 Database.updateLastIngestedDate(lastIngestedDate);
