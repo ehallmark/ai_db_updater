@@ -65,7 +65,7 @@ public class Database {
                 zipFile.extractAll(DESTINATION_FILE_NAME);
 
                 found = true;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 //e.printStackTrace();
                 System.out.println("Not found");
             }
