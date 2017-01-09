@@ -12,4 +12,5 @@ CREATE TABLE paragraph_tokens (
 -- TO RANDOMIZE ORDER OF DATA PHYSICALLY ON THE DISK
 CREATE INDEX paragraph_tokens_random_idx on paragraph_tokens (randomizer);
 CREATE INDEX paragraph_tokens_pub_doc_number_idx on paragraph_tokens (pub_doc_number);
+
 CLUSTER paragraph_tokens USING paragraph_tokens_random_idx;
