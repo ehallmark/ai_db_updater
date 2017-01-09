@@ -46,8 +46,8 @@ public class Database {
     private static void setupClassificationsHash() throws Exception{
         // should be one at least every other month
         // Load file from Google
+        patentToClassificationHash = new HashMap<>();
         if(! (new File(DESTINATION_FILE_NAME).exists())) {
-            patentToClassificationHash = new HashMap<>();
             boolean found = false;
             LocalDate date = LocalDate.now();
             while (!found) {
