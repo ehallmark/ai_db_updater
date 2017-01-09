@@ -78,21 +78,27 @@ public class Database {
                 String line = reader.readLine();
                 while(line!=null) {
                     if(line.length() >= 32) {
-                        String patNum = line.substring(10, 17);
-                        String cpcSection = line.substring(17,18);
-                        String cpcClass = line.substring(18,20);
-                        String cpcSubclass = line.substring(20,21);
-                        String cpcMainGroup = line.substring(21,25).trim();
-                        String cpcSubGroup = line.substring(26,32).trim();
-                        String[] data = new String[]{
-                                SECTION_PREFIX+cpcSection,
-                                CLASS_PREFIX+cpcClass,
-                                SUBCLASS_PREFIX+cpcSubclass,
-                                MAINGROUP_PREFIX+cpcMainGroup,
-                                SUBGROUP_PREFIX+cpcSubGroup
-                        };
-                        System.out.println("Data for "+patNum+": "+String.join(", ",data));
-                        patentToClassificationHash.put(patNum, data);
+                        String patNum = line.substring(10, 17).trim();
+                        try {
+                            if(Integer.valueOf(patNum) >= 6000000) {
+                                String cpcSection = line.substring(17, 18);
+                                String cpcClass = cpcSection + line.substring(18, 20);
+                                String cpcSubclass = cpcClass + line.substring(20, 21);
+                                String cpcMainGroup = cpcSubclass + line.substring(21, 25);
+                                String cpcSubGroup = cpcMainGroup + line.substring(26, 32);
+                                String[] data = new String[]{
+                                        cpcSection,
+                                        cpcClass,
+                                        cpcSubclass,
+                                        cpcMainGroup,
+                                        cpcSubGroup
+                                };
+                                System.out.println("Data for " + patNum + ": " + String.join(", ", data));
+                                patentToClassificationHash.put(patNum, data);
+                            }
+                        } catch(NumberFormatException nfe) {
+
+                        }
                     }
                     line = reader.readLine();
                 }
