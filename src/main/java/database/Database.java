@@ -121,12 +121,14 @@ public class Database {
 
     public static void ingestRecords(String patentNumber, List<List<String>> documents) throws SQLException {
         System.out.println("Ingesting: "+patentNumber);
+        String[] classificationData = patentToClassificationHash.get(patentNumber);
+        if(classificationData==null)return;
         PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,classifications,tokens) VALUES (?,?,?)");
         documents.forEach(doc->{
             try {
                 synchronized (ps) {
                     ps.setString(1, patentNumber);
-                    ps.setArray(2, conn.createArrayOf("varchar", patentToClassificationHash.get(patentNumber)));
+                    ps.setArray(2, conn.createArrayOf("varchar", classificationData));
                     ps.setArray(3, conn.createArrayOf("varchar", doc.toArray()));
                     ps.executeUpdate();
                 }
