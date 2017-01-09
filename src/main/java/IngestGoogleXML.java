@@ -115,7 +115,6 @@ public class IngestGoogleXML {
                     br.close();
                     fr.close();
 
-
                     // get the last one
                     if(!lines.isEmpty()) {
                         saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
@@ -126,11 +125,10 @@ public class IngestGoogleXML {
                         lines.clear();
                         handler.reset();
                     }
-                    
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
 
                 // Commit results to DB and update last ingest table
                 Database.updateLastIngestedDate(lastIngestedDate);
