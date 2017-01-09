@@ -123,7 +123,7 @@ public class Database {
         System.out.println("Ingesting: "+patentNumber);
         String[] classificationData = patentToClassificationHash.get(patentNumber);
         if(classificationData==null)return;
-        PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,classifications,tokens) VALUES (?,?,?)");
+        PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,classifications,tokens) VALUES (?,?,?) ON CONFLICT DO NOTHING");
         documents.forEach(doc->{
             try {
                 synchronized (ps) {
