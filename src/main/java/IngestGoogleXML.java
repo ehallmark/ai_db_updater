@@ -58,7 +58,7 @@ public class IngestGoogleXML {
                     // try non Google
                     try {
                         String dateStr = String.format("%06d", lastIngestedDate);
-                        URL website = new URL(base_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", lastIngestedDate) + ".zip");
+                        URL website = new URL(secondary_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", lastIngestedDate) + ".zip");
                         System.out.println("Trying: " + website.toString());
                         ReadableByteChannel rbc = Channels.newChannel(website.openStream());
                         FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME);
