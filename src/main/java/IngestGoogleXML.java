@@ -31,6 +31,8 @@ public class IngestGoogleXML {
 
             System.out.println("Starting with date: "+lastIngestedDate);
             System.out.println("Ending with date: "+endDateInt);
+            String base_url = "http://storage.googleapis.com/patents/grant_full_text";
+            String secondary_url = "http://patents.reedtech.com/downloads/GrantRedBookText";
             while(lastIngestedDate<=endDateInt) {
                 // Commit results to DB and update last ingest table
                 Database.updateLastIngestedDate(lastIngestedDate);
@@ -46,15 +48,26 @@ public class IngestGoogleXML {
                 // Load file from Google
                 try {
                     String dateStr = String.format("%06d",lastIngestedDate);
-                    URL website = new URL("http://patents.reedtech.com/downloads/GrantRedBookText/20"+dateStr.substring(0,2)+"/ipg" + String.format("%06d",lastIngestedDate) + ".zip");
+                    URL website = new URL(base_url+"/20"+dateStr.substring(0,2)+"/ipg" + String.format("%06d",lastIngestedDate) + ".zip");
                     System.out.println("Trying: "+website.toString());
                     ReadableByteChannel rbc = Channels.newChannel(website.openStream());
                     FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME);
                     fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
                     fos.close();
                 } catch(Exception e) {
-                    System.out.println("Not found");
-                    continue;
+                    // try non Google
+                    try {
+                        String dateStr = String.format("%06d", lastIngestedDate);
+                        URL website = new URL(base_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", lastIngestedDate) + ".zip");
+                        System.out.println("Trying: " + website.toString());
+                        ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                        FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME);
+                        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                        fos.close();
+                    } catch(Exception e2) {
+                        System.out.println("Not found");
+                        continue;
+                    }
                 }
 
                 // Unzip file
