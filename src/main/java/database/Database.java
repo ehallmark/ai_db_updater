@@ -46,30 +46,31 @@ public class Database {
     private static void setupClassificationsHash() throws Exception{
         // should be one at least every other month
         // Load file from Google
-        if(new File(DESTINATION_FILE_NAME).exists())new File(DESTINATION_FILE_NAME).delete();
-        patentToClassificationHash = new HashMap<>();
-        boolean found = false;
-        LocalDate date = LocalDate.now();
-        while(!found) {
-            try {
-                String dateStr = String.format("%04d",date.getYear())+"-"+String.format("%02d",date.getMonthValue())+"-"+String.format("%02d",date.getDayOfMonth());
-                String url = "http://patents.reedtech.com/downloads/PatentClassInfo/ClassData/US_Grant_CPC_MCF_Text_"+dateStr+".zip";
-                URL website = new URL(url);
-                System.out.println("Trying: " + website.toString());
-                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME);
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                fos.close();
+        if(! (new File(DESTINATION_FILE_NAME).exists())) {
+            patentToClassificationHash = new HashMap<>();
+            boolean found = false;
+            LocalDate date = LocalDate.now();
+            while (!found) {
+                try {
+                    String dateStr = String.format("%04d", date.getYear()) + "-" + String.format("%02d", date.getMonthValue()) + "-" + String.format("%02d", date.getDayOfMonth());
+                    String url = "http://patents.reedtech.com/downloads/PatentClassInfo/ClassData/US_Grant_CPC_MCF_Text_" + dateStr + ".zip";
+                    URL website = new URL(url);
+                    System.out.println("Trying: " + website.toString());
+                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                    FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                    fos.close();
 
-                ZipFile zipFile = new ZipFile(ZIP_FILE_NAME);
-                zipFile.extractAll(DESTINATION_FILE_NAME);
+                    ZipFile zipFile = new ZipFile(ZIP_FILE_NAME);
+                    zipFile.extractAll(DESTINATION_FILE_NAME);
 
-                found = true;
-            } catch (Exception e) {
-                //e.printStackTrace();
-                System.out.println("Not found");
+                    found = true;
+                } catch (Exception e) {
+                    //e.printStackTrace();
+                    System.out.println("Not found");
+                }
+                date = date.minusDays(1);
             }
-            date = date.minusDays(1);
         }
 
 
