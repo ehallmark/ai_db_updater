@@ -1,8 +1,6 @@
 package main.java.database;
 
-import main.java.tools.ZipHelper;
 import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 
 import java.io.*;
 import java.net.URL;
