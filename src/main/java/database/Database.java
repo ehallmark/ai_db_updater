@@ -14,6 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by ehallmark on 1/3/17.
@@ -79,14 +80,16 @@ public class Database {
                                 String cpcSubclass = cpcClass + line.substring(20, 21);
                                 String cpcMainGroup = cpcSubclass + line.substring(21, 25);
                                 String cpcSubGroup = cpcMainGroup + line.substring(26, 32);
-                                Set<String> data = new HashSet<>(Arrays.asList(
-                                    cpcSection,
-                                    cpcClass,
-                                    cpcSubclass,
-                                    cpcMainGroup,
-                                    cpcSubGroup
-                                ));
-                                System.out.println("Data for " + patNum + ": " + String.join(", ", data));
+                                List<String> dataList = Arrays.asList(
+                                        cpcSection,
+                                        cpcClass,
+                                        cpcSubclass,
+                                        cpcMainGroup,
+                                        cpcSubGroup
+                                );
+                                System.out.println("Data for " + patNum + ": " + String.join(", ", dataList));
+
+                                Set<String> data = dataList.stream().collect(Collectors.toSet());
                                 if(patentToClassificationHash.containsKey(patNum)) {
                                     patentToClassificationHash.get(patNum).addAll(data);
                                 } else {
