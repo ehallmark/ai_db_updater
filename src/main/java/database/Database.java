@@ -24,11 +24,6 @@ public class Database {
     private static Map<String,Set<String>> patentToClassificationHash;
     private static String ZIP_FILE_NAME = "patent_grant_classifications.zip";
     private static String DESTINATION_FILE_NAME = "patent_grant_classifications_folder";
-    private static final String SECTION_PREFIX = "SECTION - ";
-    private static final String CLASS_PREFIX = "CLASS - ";
-    private static final String SUBCLASS_PREFIX = "SUBCLASS - ";
-    private static final String MAINGROUP_PREFIX = "MAINGROUP - ";
-    private static final String SUBGROUP_PREFIX = "SUBGROUP - ";
 
     static {
         try {
