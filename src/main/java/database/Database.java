@@ -13,10 +13,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by ehallmark on 1/3/17.
@@ -24,7 +21,7 @@ import java.util.Map;
 public class Database {
     private static final String patentDBUrl = "jdbc:postgresql://localhost/patentdb?user=postgres&password=&tcpKeepAlive=true";
     private static Connection conn;
-    private static Map<String,String[]> patentToClassificationHash;
+    private static Map<String,Set<String>> patentToClassificationHash;
     private static String ZIP_FILE_NAME = "patent_grant_classifications.zip";
     private static String DESTINATION_FILE_NAME = "patent_grant_classifications_folder";
     private static final String SECTION_PREFIX = "SECTION - ";
@@ -87,18 +84,23 @@ public class Database {
                                 String cpcSubclass = cpcClass + line.substring(20, 21);
                                 String cpcMainGroup = cpcSubclass + line.substring(21, 25);
                                 String cpcSubGroup = cpcMainGroup + line.substring(26, 32);
-                                String[] data = new String[]{
-                                        cpcSection,
-                                        cpcClass,
-                                        cpcSubclass,
-                                        cpcMainGroup,
-                                        cpcSubGroup
-                                };
+                                Set<String> data = new HashSet<>(Arrays.asList(
+                                    cpcSection,
+                                    cpcClass,
+                                    cpcSubclass,
+                                    cpcMainGroup,
+                                    cpcSubGroup
+                                ));
                                 System.out.println("Data for " + patNum + ": " + String.join(", ", data));
-                                patentToClassificationHash.put(patNum, data);
+                                if(patentToClassificationHash.containsKey(patNum)) {
+                                    patentToClassificationHash.get(patNum).addAll(data);
+                                } else {
+                                    patentToClassificationHash.put(patNum, data);
+                                }
                             }
                         } catch(NumberFormatException nfe) {
-
+                            // not a utility patent
+                            // skip...
                         }
                     }
                     line = reader.readLine();
@@ -121,14 +123,14 @@ public class Database {
 
     public static void ingestRecords(String patentNumber, List<List<String>> documents) throws SQLException {
         System.out.println("Ingesting: "+patentNumber);
-        String[] classificationData = patentToClassificationHash.get(patentNumber);
+        Set<String> classificationData = patentToClassificationHash.get(patentNumber);
         if(classificationData==null)return;
         PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,classifications,tokens) VALUES (?,?,?) ON CONFLICT DO NOTHING");
         documents.forEach(doc->{
             try {
                 synchronized (ps) {
                     ps.setString(1, patentNumber);
-                    ps.setArray(2, conn.createArrayOf("varchar", classificationData));
+                    ps.setArray(2, conn.createArrayOf("varchar", classificationData.toArray()));
                     ps.setArray(3, conn.createArrayOf("varchar", doc.toArray()));
                     ps.executeUpdate();
                 }
