@@ -21,9 +21,11 @@ public class SAXHandler extends DefaultHandler{
     boolean inDescription=false;
     boolean inDescriptionParagraph=false;
     boolean isDocNumber=false;
+    boolean isInventor=false;
     String pubDocNumber;
     List<List<String>>fullDocuments=new ArrayList<>();
     List<String>documentPieces=new ArrayList<>();
+    private Set<String> inventors= new HashSet<>();
     private static PhrasePreprocessor phrasePreprocessor = new PhrasePreprocessor();
 
     public String getPatentNumber() {
@@ -34,9 +36,12 @@ public class SAXHandler extends DefaultHandler{
         return fullDocuments;
     }
 
+    public Set<String> getInventors() { return inventors; }
+
     public void reset() {
         fullDocuments.clear();
         documentPieces.clear();
+        inventors.clear();
         pubDocNumber=null;
     }
 
@@ -67,6 +72,10 @@ public class SAXHandler extends DefaultHandler{
 
         if(inDescription && qName.equalsIgnoreCase("p")) {
             inDescriptionParagraph=true;
+        }
+
+        if(qName.equalsIgnoreCase("inventor")) {
+            isInventor=true;
         }
     }
 
@@ -121,6 +130,14 @@ public class SAXHandler extends DefaultHandler{
             documentPieces.clear();
         }
 
+        if(qName.equalsIgnoreCase("inventor")) {
+            isInventor=false;
+            List<String> tokens = extractTokens(String.join(" ",documentPieces),false);
+            if(tokens.size() > 5) {
+                inventors.add(String.join(" ",tokens));
+            }
+            documentPieces.clear();
+        }
     }
 
     public void characters(char ch[],int start,int length)throws SAXException{
@@ -131,15 +148,20 @@ public class SAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if(isClaim||isDocNumber||isAbstract||inDescriptionParagraph){
+        if(isClaim||isDocNumber||isAbstract||inDescriptionParagraph||isInventor){
             documentPieces.add(new String(ch,start,length));
         }
 
     }
 
-    private static List<String> extractTokens(String toExtract) {
-        return Arrays.stream(phrasePreprocessor.preProcess(toExtract.toLowerCase().replaceAll("[^a-z ]"," ")).split("\\s+"))
+    private static List<String> extractTokens(String toExtract,boolean phrases) {
+        String data = toExtract.toLowerCase().replaceAll("[^a-z ]"," ");
+        return Arrays.stream((phrases?phrasePreprocessor.preProcess(data):data).split("\\s+"))
                 .filter(t->t!=null&&t.length()>0)
                 .collect(Collectors.toList());
+    }
+
+    private static List<String> extractTokens(String toExtract) {
+        return extractTokens(toExtract,true);
     }
 }

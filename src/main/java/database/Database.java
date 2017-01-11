@@ -118,17 +118,18 @@ public class Database {
         return lastDate;
     }
 
-    public static void ingestRecords(String patentNumber, List<List<String>> documents) throws SQLException {
+    public static void ingestRecords(String patentNumber,Set<String> inventorData, List<List<String>> documents) throws SQLException {
         System.out.println("Ingesting: "+patentNumber);
         Set<String> classificationData = patentToClassificationHash.get(patentNumber);
-        if(classificationData==null)return;
-        PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,classifications,tokens) VALUES (?,?,?) ON CONFLICT DO NOTHING");
+        if(classificationData==null || inventorData == null)return;
+        PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,classifications,inventors,tokens) VALUES (?,?,?,?) ON CONFLICT DO NOTHING");
         documents.forEach(doc->{
             try {
                 synchronized (ps) {
                     ps.setString(1, patentNumber);
                     ps.setArray(2, conn.createArrayOf("varchar", classificationData.toArray()));
-                    ps.setArray(3, conn.createArrayOf("varchar", doc.toArray()));
+                    ps.setArray(3, conn.createArrayOf("varchar", inventorData.toArray()));
+                    ps.setArray(4, conn.createArrayOf("varchar", doc.toArray()));
                     ps.executeUpdate();
                 }
             } catch(SQLException e) {

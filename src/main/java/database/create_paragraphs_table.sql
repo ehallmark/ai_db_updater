@@ -5,6 +5,7 @@
 CREATE TABLE paragraph_tokens (
     pub_doc_number varchar(25) not null,
     classifications text[] not null,
+    inventors text[] not null,
     tokens text[] not null,
     randomizer double precision not null default(random())
 );
