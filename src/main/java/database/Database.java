@@ -86,12 +86,13 @@ public class Database {
                                         cpcSubGroup
                                 );
                                 System.out.println("Data for " + patNum + ": " + String.join(", ", dataList));
-
-                                Set<String> data = dataList.stream().collect(Collectors.toSet());
-                                if(patentToClassificationHash.containsKey(patNum)) {
-                                    patentToClassificationHash.get(patNum).addAll(data);
-                                } else {
-                                    patentToClassificationHash.put(patNum, data);
+                                if(patentToClassificationHash!=null) {
+                                    Set<String> data = dataList.stream().collect(Collectors.toSet());
+                                    if (patentToClassificationHash.containsKey(patNum)) {
+                                        patentToClassificationHash.get(patNum).addAll(data);
+                                    } else {
+                                        patentToClassificationHash.put(patNum, data);
+                                    }
                                 }
                             }
                         } catch(NumberFormatException nfe) {

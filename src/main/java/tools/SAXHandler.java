@@ -18,10 +18,13 @@ public class SAXHandler extends DefaultHandler{
     boolean isClaim=false;
     boolean inPublicationReference=false;
     boolean isAbstract=false;
+    boolean inDescription=false;
+    boolean inDescriptionParagraph=false;
     boolean isDocNumber=false;
     String pubDocNumber;
     List<List<String>>fullDocuments=new ArrayList<>();
     List<String>documentPieces=new ArrayList<>();
+    private static PhrasePreprocessor phrasePreprocessor = new PhrasePreprocessor();
 
     public String getPatentNumber() {
         return pubDocNumber;
@@ -56,6 +59,14 @@ public class SAXHandler extends DefaultHandler{
 
         if(qName.equalsIgnoreCase("abstract")) {
             isAbstract = true;
+        }
+
+        if(qName.equalsIgnoreCase("description")) {
+            inDescription=true;
+        }
+
+        if(inDescription && qName.equalsIgnoreCase("p")) {
+            inDescriptionParagraph=true;
         }
     }
 
@@ -97,6 +108,19 @@ public class SAXHandler extends DefaultHandler{
             documentPieces.clear();
         }
 
+        if(inDescription && qName.equalsIgnoreCase("p")) {
+            inDescriptionParagraph=false;
+        }
+
+        if(qName.equalsIgnoreCase("description")) {
+            inDescription=false;
+            List<String> tokens = extractTokens(String.join(" ",documentPieces));
+            if(tokens.size() > 5) {
+                fullDocuments.add(tokens);
+            }
+            documentPieces.clear();
+        }
+
     }
 
     public void characters(char ch[],int start,int length)throws SAXException{
@@ -107,13 +131,14 @@ public class SAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if(isClaim||isDocNumber||isAbstract){
+        if(isClaim||isDocNumber||isAbstract||inDescriptionParagraph){
             documentPieces.add(new String(ch,start,length));
         }
+
     }
 
     private static List<String> extractTokens(String toExtract) {
-        return Arrays.stream(toExtract.toLowerCase().replaceAll("[^a-z ]"," ").split("\\s+"))
+        return Arrays.stream(phrasePreprocessor.preProcess(toExtract.toLowerCase().replaceAll("[^a-z ]"," ")).split("\\s+"))
                 .filter(t->t!=null&&t.length()>0)
                 .collect(Collectors.toList());
     }

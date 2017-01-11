@@ -126,13 +126,13 @@ public class IngestGoogleXML {
                         handler.reset();
                     }
 
+                    // Commit results to DB and update last ingest table
+                    Database.updateLastIngestedDate(lastIngestedDate);
+                    Database.commit();
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
-                // Commit results to DB and update last ingest table
-                Database.updateLastIngestedDate(lastIngestedDate);
-                Database.commit();
 
                 // Delete zip and related folders
                 File zipFile = new File(ZIP_FILE_NAME);
