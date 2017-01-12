@@ -162,7 +162,7 @@ public class IngestGoogleXML {
                 action.fork();
                 tasks.add(action);
 
-                if(tasks.size() >= numTasks) {
+                if(tasks.size() >= numTasks*7) {// days in a week
                     tasks.forEach(task->{
                         task.join();
                     });
@@ -174,6 +174,7 @@ public class IngestGoogleXML {
                 tasks.forEach(task->{
                     task.join();
                 });
+                tasks.clear();
             }
 
             // Repeat
