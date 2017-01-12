@@ -95,6 +95,10 @@ public class SAXHandler extends DefaultHandler{
             documentPieces.clear();
         }
 
+        if(qName.equalsIgnoreCase("publication-reference")){
+            inPublicationReference=false;
+        }
+
         if(pubDocNumber==null)return; // skip if invalid should speed it up a lot
 
 
@@ -105,11 +109,6 @@ public class SAXHandler extends DefaultHandler{
                 fullDocuments.add(tokens);
             }
             documentPieces.clear();
-        }
-
-
-        if(qName.equalsIgnoreCase("publication-reference")){
-            inPublicationReference=false;
         }
 
         if(qName.equalsIgnoreCase("abstract")){
