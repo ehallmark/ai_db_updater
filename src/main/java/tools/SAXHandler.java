@@ -99,7 +99,7 @@ public class SAXHandler extends DefaultHandler{
             inPublicationReference=false;
         }
 
-        if(pubDocNumber==null)return; // skip if invalid should speed it up a lot
+        //if(pubDocNumber==null)return; // skip if invalid should speed it up a lot
 
 
         if(qName.equalsIgnoreCase("claim")){
