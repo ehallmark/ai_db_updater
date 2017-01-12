@@ -84,15 +84,6 @@ public class SAXHandler extends DefaultHandler{
 
         //System.out.println("End Element :" + qName);
 
-        if(qName.equalsIgnoreCase("claim")){
-            isClaim=false;
-            List<String> tokens = extractTokens(String.join(" ",documentPieces));
-            if(tokens.size() > 5) {
-                fullDocuments.add(tokens);
-            }
-            documentPieces.clear();
-        }
-
         if(qName.equalsIgnoreCase("doc-number")&&inPublicationReference){
             isDocNumber=false;
             pubDocNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
@@ -103,6 +94,19 @@ public class SAXHandler extends DefaultHandler{
             }
             documentPieces.clear();
         }
+
+        if(pubDocNumber==null)return; // skip if invalid should speed it up a lot
+
+
+        if(qName.equalsIgnoreCase("claim")){
+            isClaim=false;
+            List<String> tokens = extractTokens(String.join(" ",documentPieces));
+            if(tokens.size() > 5) {
+                fullDocuments.add(tokens);
+            }
+            documentPieces.clear();
+        }
+
 
         if(qName.equalsIgnoreCase("publication-reference")){
             inPublicationReference=false;

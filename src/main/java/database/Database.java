@@ -139,15 +139,15 @@ public class Database {
         ps.close();
     }
 
-    public static void commit() throws SQLException {
+    public static synchronized void commit() throws SQLException {
         conn.commit();
     }
 
-    public static void close() throws SQLException {
+    public static synchronized void close() throws SQLException {
         conn.close();
     }
 
-    public static void updateLastIngestedDate(Integer date) throws IOException {
+    public static synchronized void updateLastIngestedDate(Integer date) throws IOException {
         FileWriter fw = new FileWriter(new File("lastDateFile.txt"));
         fw.write(date.toString());
         fw.close();
