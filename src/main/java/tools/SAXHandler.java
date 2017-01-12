@@ -83,7 +83,6 @@ public class SAXHandler extends DefaultHandler{
 
     public void endElement(String uri,String localName,
         String qName)throws SAXException{
-        if(shouldTerminate)return;
 
         //System.out.println("End Element :" + qName);
 
