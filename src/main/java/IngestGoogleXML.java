@@ -49,7 +49,7 @@ public class IngestGoogleXML {
                 }
 
                 final int finalLastIngestedDate=lastIngestedDate;
-                // Load file from Google
+
                 try {
                     String dateStr = String.format("%06d",finalLastIngestedDate);
                     URL website = new URL(base_url+"/20"+dateStr.substring(0,2)+"/ipg" + String.format("%06d",finalLastIngestedDate) + ".zip");
@@ -86,62 +86,74 @@ public class IngestGoogleXML {
                     continue;
                 }
 
-                // Ingest data for each file
+                // Load file from Google
+                RecursiveAction action = new RecursiveAction() {
+                    @Override
+                    protected void compute() {
+                        // Ingest data for each file
+                        try {
 
-                try {
+                            SAXParserFactory factory = SAXParserFactory.newInstance();
+                            factory.setNamespaceAware(false);
+                            factory.setValidating(false);
+                            // security vulnerable
+                            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+                            SAXParser saxParser = factory.newSAXParser();
 
-                    SAXParserFactory factory = SAXParserFactory.newInstance();
-                    factory.setNamespaceAware(false);
-                    factory.setValidating(false);
-                    // security vulnerable
-                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-                    SAXParser saxParser = factory.newSAXParser();
-
-                    SAXHandler handler = new SAXHandler();
+                            SAXHandler handler = new SAXHandler();
 
 
-                    FileReader fr = new FileReader(new File(DESTINATION_FILE_NAME+finalLastIngestedDate));
-                    BufferedReader br = new BufferedReader(fr);
-                    String line;
-                    boolean firstLine = true;
-                    List<String> lines = new ArrayList<>();
-                    while ((line = br.readLine()) != null) {
-                        if (line.contains("<?xml") && !firstLine) {
-                            // stop
-                            saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
+                            FileReader fr = new FileReader(new File(DESTINATION_FILE_NAME+finalLastIngestedDate));
+                            BufferedReader br = new BufferedReader(fr);
+                            String line;
+                            boolean firstLine = true;
+                            List<String> lines = new ArrayList<>();
+                            while ((line = br.readLine()) != null) {
+                                if (line.contains("<?xml") && !firstLine) {
+                                    // stop
+                                    saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
 
-                            if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty() && !handler.getInventors().isEmpty()) {
-                                Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
+                                    if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty() && !handler.getInventors().isEmpty()) {
+                                        Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
+                                    }
+
+                                    lines.clear();
+                                    handler.reset();
+                                }
+                                if(firstLine) firstLine = false;
+                                lines.add(line);
+                            }
+                            br.close();
+                            fr.close();
+
+                            // get the last one
+                            if(!lines.isEmpty()) {
+                                saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
+
+                                if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
+                                    Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
+                                }
+                                lines.clear();
+                                handler.reset();
                             }
 
-                            lines.clear();
-                            handler.reset();
+                            Database.commit();
+
+                            // Commit results to DB and update last ingest table
+                            Database.updateLastIngestedDate(finalLastIngestedDate);
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                        if(firstLine) firstLine = false;
-                        lines.add(line);
+
                     }
-                    br.close();
-                    fr.close();
+                };
+                action.fork();
+                tasks.add(action);
 
-                    // get the last one
-                    if(!lines.isEmpty()) {
-                        saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
-
-                        if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
-                            Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
-                        }
-                        lines.clear();
-                        handler.reset();
-                    }
-
-                    Database.commit();
-
-                    // Commit results to DB and update last ingest table
-                    Database.updateLastIngestedDate(finalLastIngestedDate);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
+                while(tasks.size()>numTasks) {
+                    tasks.remove(0).join();
                 }
 
                 // cleanup
@@ -153,7 +165,10 @@ public class IngestGoogleXML {
                 File xmlFile = new File(DESTINATION_FILE_NAME+finalLastIngestedDate);
                 if (xmlFile.exists()) xmlFile.delete();
 
+            }
 
+            while(!tasks.isEmpty()) {
+                tasks.remove(0).join();
             }
 
             // Repeat
