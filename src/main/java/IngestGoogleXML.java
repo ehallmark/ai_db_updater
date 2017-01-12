@@ -24,7 +24,7 @@ public class IngestGoogleXML {
 
     public static void main(String[] args) {
         try {
-            final int numTasks = 8;
+            final int numTasks = 10;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);
             // Get last ingested date
             Integer lastIngestedDate = Database.lastIngestedDate();
@@ -47,34 +47,37 @@ public class IngestGoogleXML {
                 if(lastIngestedDate%10000 > 1231) {
                     lastIngestedDate = lastIngestedDate+10000 - (lastIngestedDate%10000);
                 }
+
                 final int finalLastIngestedDate=lastIngestedDate;
+                // Load file from Google
+                try {
+                    String dateStr = String.format("%06d",finalLastIngestedDate);
+                    URL website = new URL(base_url+"/20"+dateStr.substring(0,2)+"/ipg" + String.format("%06d",finalLastIngestedDate) + ".zip");
+                    System.out.println("Trying: "+website.toString());
+                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                    FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                    fos.close();
+                } catch(Exception e) {
+                    // try non Google
+                    try {
+                        String dateStr = String.format("%06d", finalLastIngestedDate);
+                        URL website = new URL(secondary_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", finalLastIngestedDate) + ".zip");
+                        System.out.println("Trying: " + website.toString());
+                        ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                        FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
+                        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                        fos.close();
+                    } catch(Exception e2) {
+                        System.out.println("Not found");
+                        continue;
+                    }
+                }
+
                 RecursiveAction action = new RecursiveAction() {
                     @Override
                     protected void compute() {
-                        // Load file from Google
-                        try {
-                            String dateStr = String.format("%06d",finalLastIngestedDate);
-                            URL website = new URL(base_url+"/20"+dateStr.substring(0,2)+"/ipg" + String.format("%06d",finalLastIngestedDate) + ".zip");
-                            System.out.println("Trying: "+website.toString());
-                            ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                            FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
-                            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                            fos.close();
-                        } catch(Exception e) {
-                            // try non Google
-                            try {
-                                String dateStr = String.format("%06d", finalLastIngestedDate);
-                                URL website = new URL(secondary_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", finalLastIngestedDate) + ".zip");
-                                System.out.println("Trying: " + website.toString());
-                                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                                FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
-                                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                                fos.close();
-                            } catch(Exception e2) {
-                                System.out.println("Not found");
-                                return;
-                            }
-                        }
+
 
                         try {
                             // Unzip file
@@ -162,7 +165,7 @@ public class IngestGoogleXML {
                 action.fork();
                 tasks.add(action);
 
-                if(tasks.size() >= numTasks*7) {// days in a week
+                if(tasks.size() >= numTasks) {// days in a week
                     tasks.forEach(task->{
                         task.join();
                     });
