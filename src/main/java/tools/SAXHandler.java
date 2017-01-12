@@ -74,7 +74,7 @@ public class SAXHandler extends DefaultHandler{
             inDescriptionParagraph=true;
         }
 
-        if(qName.equalsIgnoreCase("inventor")) {
+        if(qName.toLowerCase().endsWith("inventor")||qName.toLowerCase().endsWith("applicant")) {
             isInventor=true;
         }
     }
@@ -130,7 +130,7 @@ public class SAXHandler extends DefaultHandler{
             documentPieces.clear();
         }
 
-        if(qName.equalsIgnoreCase("inventor")) {
+        if(qName.toLowerCase().endsWith("inventor")||qName.toLowerCase().endsWith("applicant")) {
             isInventor=false;
             List<String> tokens = extractTokens(String.join(" ",documentPieces),false);
             if(tokens.size() > 5) {
