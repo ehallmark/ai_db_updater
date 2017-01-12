@@ -74,110 +74,86 @@ public class IngestGoogleXML {
                     }
                 }
 
-                RecursiveAction action = new RecursiveAction() {
-                    @Override
-                    protected void compute() {
-
-
-                        try {
-                            // Unzip file
-                            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME+finalLastIngestedDate)));
-                            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME+finalLastIngestedDate)));
-                            ZipHelper.unzip(bis, bos);
-                            bis.close();
-                            bos.close();
-                        } catch(Exception e) {
-                            System.out.println("Unable to unzip file");
-                            return;
-                        }
-
-                        // Ingest data for each file
-
-                        try {
-
-                            SAXParserFactory factory = SAXParserFactory.newInstance();
-                            factory.setNamespaceAware(false);
-                            factory.setValidating(false);
-                            // security vulnerable
-                            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-                            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-                            SAXParser saxParser = factory.newSAXParser();
-
-                            SAXHandler handler = new SAXHandler();
-
-
-                            FileReader fr = new FileReader(new File(DESTINATION_FILE_NAME+finalLastIngestedDate));
-                            BufferedReader br = new BufferedReader(fr);
-                            String line;
-                            boolean firstLine = true;
-                            List<String> lines = new ArrayList<>();
-                            while ((line = br.readLine()) != null) {
-                                if (line.contains("<?xml") && !firstLine) {
-                                    // stop
-                                    saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
-
-                                    if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty() && !handler.getInventors().isEmpty()) {
-                                        Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
-                                    }
-
-                                    lines.clear();
-                                    handler.reset();
-                                }
-                                if(firstLine) firstLine = false;
-                                lines.add(line);
-                            }
-                            br.close();
-                            fr.close();
-
-                            // get the last one
-                            if(!lines.isEmpty()) {
-                                saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
-
-                                if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
-                                    Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
-                                }
-                                lines.clear();
-                                handler.reset();
-                            }
-
-                            Database.commit();
-
-                            // Commit results to DB and update last ingest table
-                            Database.updateLastIngestedDate(finalLastIngestedDate);
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-                        // cleanup
-
-                        // Delete zip and related folders
-                        File zipFile = new File(ZIP_FILE_NAME+finalLastIngestedDate);
-                        if (zipFile.exists()) zipFile.delete();
-
-                        File xmlFile = new File(DESTINATION_FILE_NAME+finalLastIngestedDate);
-                        if (xmlFile.exists()) xmlFile.delete();
-
-                    }
-                };
-
-
-                action.fork();
-                tasks.add(action);
-
-                if(tasks.size() >= numTasks) {// days in a week
-                    tasks.forEach(task->{
-                        task.join();
-                    });
-                    tasks.clear();
+                try {
+                    // Unzip file
+                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME+finalLastIngestedDate)));
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME+finalLastIngestedDate)));
+                    ZipHelper.unzip(bis, bos);
+                    bis.close();
+                    bos.close();
+                } catch(Exception e) {
+                    System.out.println("Unable to unzip file");
+                    continue;
                 }
-            }
 
-            if(!tasks.isEmpty()) {
-                tasks.forEach(task->{
-                    task.join();
-                });
-                tasks.clear();
+                // Ingest data for each file
+
+                try {
+
+                    SAXParserFactory factory = SAXParserFactory.newInstance();
+                    factory.setNamespaceAware(false);
+                    factory.setValidating(false);
+                    // security vulnerable
+                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+                    SAXParser saxParser = factory.newSAXParser();
+
+                    SAXHandler handler = new SAXHandler();
+
+
+                    FileReader fr = new FileReader(new File(DESTINATION_FILE_NAME+finalLastIngestedDate));
+                    BufferedReader br = new BufferedReader(fr);
+                    String line;
+                    boolean firstLine = true;
+                    List<String> lines = new ArrayList<>();
+                    while ((line = br.readLine()) != null) {
+                        if (line.contains("<?xml") && !firstLine) {
+                            // stop
+                            saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
+
+                            if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty() && !handler.getInventors().isEmpty()) {
+                                Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
+                            }
+
+                            lines.clear();
+                            handler.reset();
+                        }
+                        if(firstLine) firstLine = false;
+                        lines.add(line);
+                    }
+                    br.close();
+                    fr.close();
+
+                    // get the last one
+                    if(!lines.isEmpty()) {
+                        saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
+
+                        if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
+                            Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
+                        }
+                        lines.clear();
+                        handler.reset();
+                    }
+
+                    Database.commit();
+
+                    // Commit results to DB and update last ingest table
+                    Database.updateLastIngestedDate(finalLastIngestedDate);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                // cleanup
+
+                // Delete zip and related folders
+                File zipFile = new File(ZIP_FILE_NAME+finalLastIngestedDate);
+                if (zipFile.exists()) zipFile.delete();
+
+                File xmlFile = new File(DESTINATION_FILE_NAME+finalLastIngestedDate);
+                if (xmlFile.exists()) xmlFile.delete();
+
+
             }
 
             // Repeat

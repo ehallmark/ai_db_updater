@@ -22,6 +22,7 @@ public class SAXHandler extends DefaultHandler{
     boolean inDescriptionParagraph=false;
     boolean isDocNumber=false;
     boolean isInventor=false;
+    boolean shouldTerminate = false;
     String pubDocNumber;
     List<List<String>>fullDocuments=new ArrayList<>();
     List<String>documentPieces=new ArrayList<>();
@@ -41,6 +42,7 @@ public class SAXHandler extends DefaultHandler{
     public void reset() {
         fullDocuments.clear();
         documentPieces.clear();
+        shouldTerminate=false;
         inventors.clear();
         pubDocNumber=null;
     }
@@ -81,6 +83,7 @@ public class SAXHandler extends DefaultHandler{
 
     public void endElement(String uri,String localName,
         String qName)throws SAXException{
+        if(shouldTerminate)return;
 
         //System.out.println("End Element :" + qName);
 
@@ -91,6 +94,7 @@ public class SAXHandler extends DefaultHandler{
 
             if(pubDocNumber.replaceAll("[^0-9]","").length()!=pubDocNumber.length()) {
                 pubDocNumber=null;
+                shouldTerminate = true;
             }
             documentPieces.clear();
         }
@@ -98,9 +102,6 @@ public class SAXHandler extends DefaultHandler{
         if(qName.equalsIgnoreCase("publication-reference")){
             inPublicationReference=false;
         }
-
-        //if(pubDocNumber==null)return; // skip if invalid should speed it up a lot
-
 
         if(qName.equalsIgnoreCase("claim")){
             isClaim=false;
@@ -151,7 +152,7 @@ public class SAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if(isClaim||isDocNumber||isAbstract||inDescriptionParagraph||isInventor){
+        if((!shouldTerminate)&&(isClaim||isDocNumber||isAbstract||inDescriptionParagraph||isInventor)){
             documentPieces.add(new String(ch,start,length));
         }
 
