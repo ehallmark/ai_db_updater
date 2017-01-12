@@ -35,7 +35,7 @@ public class IngestGoogleXML {
             System.out.println("Starting with date: "+lastIngestedDate);
             System.out.println("Ending with date: "+endDateInt);
             String base_url = "http://storage.googleapis.com/patents/grant_full_text";
-            String secondary_url = "http://patents.reedtech.com/downloads/GrantRedBookText";
+            String secondary_url = "https://bulkdata.uspto.gov/data2/patent/grant/redbook/fulltext";
             while(lastIngestedDate<=endDateInt) {
                 // Commit results to DB and update last ingest table
                 Database.updateLastIngestedDate(lastIngestedDate);
