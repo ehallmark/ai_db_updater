@@ -160,7 +160,7 @@ public class SAXHandler extends DefaultHandler{
     private static List<String> extractTokens(String toExtract,boolean phrases) {
         String data = toExtract.toLowerCase().replaceAll("[^a-z ]"," ");
         return Arrays.stream((phrases?phrasePreprocessor.preProcess(data):data).split("\\s+"))
-                .filter(t->t!=null&&t.length()>0)
+                .filter(t->t!=null&&t.length()>0).limit(10000)
                 .collect(Collectors.toList());
     }
 
