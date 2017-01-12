@@ -147,6 +147,15 @@ public class IngestGoogleXML {
                             e.printStackTrace();
                         }
 
+                        // cleanup
+
+                        // Delete zip and related folders
+                        File zipFile = new File(ZIP_FILE_NAME+finalLastIngestedDate);
+                        if (zipFile.exists()) zipFile.delete();
+
+                        File xmlFile = new File(DESTINATION_FILE_NAME+finalLastIngestedDate);
+                        if (xmlFile.exists()) xmlFile.delete();
+
                     }
                 };
                 action.fork();
@@ -155,15 +164,6 @@ public class IngestGoogleXML {
                 while(tasks.size()>numTasks) {
                     tasks.remove(0).join();
                 }
-
-                // cleanup
-
-                // Delete zip and related folders
-                File zipFile = new File(ZIP_FILE_NAME+finalLastIngestedDate);
-                if (zipFile.exists()) zipFile.delete();
-
-                File xmlFile = new File(DESTINATION_FILE_NAME+finalLastIngestedDate);
-                if (xmlFile.exists()) xmlFile.delete();
 
             }
 
