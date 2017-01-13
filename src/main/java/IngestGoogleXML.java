@@ -50,46 +50,46 @@ public class IngestGoogleXML {
 
                 final int finalLastIngestedDate=lastIngestedDate;
 
-                try {
-                    String dateStr = String.format("%06d",finalLastIngestedDate);
-                    URL website = new URL(base_url+"/20"+dateStr.substring(0,2)+"/ipg" + String.format("%06d",finalLastIngestedDate) + ".zip");
-                    System.out.println("Trying: "+website.toString());
-                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                    FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
-                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                    fos.close();
-                } catch(Exception e) {
-                    // try non Google
-                    try {
-                        String dateStr = String.format("%06d", finalLastIngestedDate);
-                        URL website = new URL(secondary_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", finalLastIngestedDate) + ".zip");
-                        System.out.println("Trying: " + website.toString());
-                        ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                        FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
-                        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                        fos.close();
-                    } catch(Exception e2) {
-                        System.out.println("Not found");
-                        continue;
-                    }
-                }
-
-                try {
-                    // Unzip file
-                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME+finalLastIngestedDate)));
-                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME+finalLastIngestedDate)));
-                    ZipHelper.unzip(bis, bos);
-                    bis.close();
-                    bos.close();
-                } catch(Exception e) {
-                    System.out.println("Unable to unzip file");
-                    continue;
-                }
 
                 // Load file from Google
                 RecursiveAction action = new RecursiveAction() {
                     @Override
                     protected void compute() {
+                        try {
+                            String dateStr = String.format("%06d",finalLastIngestedDate);
+                            URL website = new URL(base_url+"/20"+dateStr.substring(0,2)+"/ipg" + String.format("%06d",finalLastIngestedDate) + ".zip");
+                            System.out.println("Trying: "+website.toString());
+                            ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                            FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
+                            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                            fos.close();
+                        } catch(Exception e) {
+                            // try non Google
+                            try {
+                                String dateStr = String.format("%06d", finalLastIngestedDate);
+                                URL website = new URL(secondary_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", finalLastIngestedDate) + ".zip");
+                                System.out.println("Trying: " + website.toString());
+                                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                                FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
+                                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                                fos.close();
+                            } catch(Exception e2) {
+                                System.out.println("Not found");
+                                return;
+                            }
+                        }
+
+                        try {
+                            // Unzip file
+                            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME+finalLastIngestedDate)));
+                            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME+finalLastIngestedDate)));
+                            ZipHelper.unzip(bis, bos);
+                            bis.close();
+                            bos.close();
+                        } catch(Exception e) {
+                            System.out.println("Unable to unzip file");
+                            return;
+                        }
                         // Ingest data for each file
                         try {
 
