@@ -24,7 +24,7 @@ public class IngestGoogleXML {
 
     public static void main(String[] args) {
         try {
-            final int numTasks = 25;
+            final int numTasks = 100;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);
             // Get last ingested date
             Integer lastIngestedDate = Database.lastIngestedDate();
