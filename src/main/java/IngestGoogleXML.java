@@ -24,7 +24,7 @@ public class IngestGoogleXML {
 
     public static void main(String[] args) {
         try {
-            final int numTasks = 100;
+            final int numTasks = 24;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);
             // Get last ingested date
             Integer lastIngestedDate = Database.lastIngestedDate();
@@ -138,10 +138,8 @@ public class IngestGoogleXML {
                                 handler.reset();
                             }
 
-                            Database.commit();
-
                             // Commit results to DB and update last ingest table
-                            Database.updateLastIngestedDate(finalLastIngestedDate);
+                            //Database.updateLastIngestedDate(finalLastIngestedDate);
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -164,12 +162,15 @@ public class IngestGoogleXML {
                 while(tasks.size()>numTasks) {
                     tasks.remove(0).join();
                 }
+                Database.commit();
 
             }
 
             while(!tasks.isEmpty()) {
                 tasks.remove(0).join();
             }
+            Database.commit();
+
 
             // Repeat
         } catch(Exception e) {
