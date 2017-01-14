@@ -18,8 +18,8 @@ public class SAXHandler extends DefaultHandler{
     boolean isClaim=false;
     boolean inPublicationReference=false;
     boolean isAbstract=false;
-    boolean inDescription=false;
-    boolean inDescriptionParagraph=false;
+    //boolean inDescription=false;
+    //boolean inDescriptionParagraph=false;
     boolean isDocNumber=false;
     boolean isInventor=false;
     boolean shouldTerminate = false;
@@ -40,6 +40,12 @@ public class SAXHandler extends DefaultHandler{
     public Set<String> getInventors() { return inventors; }
 
     public void reset() {
+        isClaim=false;
+        inPublicationReference=false;
+        isAbstract=false;
+        isDocNumber=false;
+        isInventor=false;
+        shouldTerminate = false;
         fullDocuments.clear();
         documentPieces.clear();
         shouldTerminate=false;
@@ -68,13 +74,14 @@ public class SAXHandler extends DefaultHandler{
             isAbstract = true;
         }
 
+        /*
         if(qName.equalsIgnoreCase("description")) {
             inDescription=true;
         }
 
         if(inDescription && qName.equalsIgnoreCase("p")) {
             inDescriptionParagraph=true;
-        }
+        }*/
 
         if(qName.toLowerCase().endsWith("inventor")||qName.toLowerCase().endsWith("applicant")) {
             isInventor=true;
@@ -120,6 +127,7 @@ public class SAXHandler extends DefaultHandler{
             documentPieces.clear();
         }
 
+        /*
         if(inDescription && qName.equalsIgnoreCase("p")) {
             inDescriptionParagraph=false;
         }
@@ -131,13 +139,13 @@ public class SAXHandler extends DefaultHandler{
                 fullDocuments.add(tokens);
             }
             documentPieces.clear();
-        }
+        }*/
 
         if(qName.toLowerCase().endsWith("inventor")||qName.toLowerCase().endsWith("applicant")) {
             isInventor=false;
             List<String> tokens = extractTokens(String.join(" ",documentPieces),false);
             if(tokens.size() > 5) {
-                inventors.add(String.join(" ",tokens));
+                inventors.add(String.join(" ",tokens).toUpperCase());
             }
             documentPieces.clear();
         }
@@ -151,7 +159,7 @@ public class SAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if((!shouldTerminate)&&(isClaim||isDocNumber||isAbstract||inDescriptionParagraph||isInventor)){
+        if((!shouldTerminate)&&(isClaim||isDocNumber||isAbstract||isInventor)){
             documentPieces.add(new String(ch,start,length));
         }
 

@@ -114,7 +114,7 @@ public class IngestGoogleXML {
                                     // stop
                                     saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
 
-                                    if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty() && !handler.getInventors().isEmpty()) {
+                                    if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
                                         Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
                                     }
 
