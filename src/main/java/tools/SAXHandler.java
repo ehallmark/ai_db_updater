@@ -21,12 +21,13 @@ public class SAXHandler extends DefaultHandler{
     //boolean inDescription=false;
     //boolean inDescriptionParagraph=false;
     boolean isDocNumber=false;
-    boolean isInventor=false;
+    boolean inAssignee=false;
+    boolean isOrgname = false;
     boolean shouldTerminate = false;
     String pubDocNumber;
     List<List<String>>fullDocuments=new ArrayList<>();
     List<String>documentPieces=new ArrayList<>();
-    private Set<String> inventors= new HashSet<>();
+    private Set<String> assignees= new HashSet<>();
     private static PhrasePreprocessor phrasePreprocessor = new PhrasePreprocessor();
 
     public String getPatentNumber() {
@@ -37,19 +38,20 @@ public class SAXHandler extends DefaultHandler{
         return fullDocuments;
     }
 
-    public Set<String> getInventors() { return inventors; }
+    public Set<String> getAssignees() { return assignees; }
 
     public void reset() {
         isClaim=false;
         inPublicationReference=false;
         isAbstract=false;
         isDocNumber=false;
-        isInventor=false;
+        inAssignee=false;
+        isOrgname=false;
         shouldTerminate = false;
         fullDocuments.clear();
         documentPieces.clear();
         shouldTerminate=false;
-        inventors.clear();
+        assignees.clear();
         pubDocNumber=null;
     }
 
@@ -83,8 +85,12 @@ public class SAXHandler extends DefaultHandler{
             inDescriptionParagraph=true;
         }*/
 
-        if(qName.toLowerCase().endsWith("inventor")||qName.toLowerCase().endsWith("applicant")) {
-            isInventor=true;
+        if(qName.toLowerCase().endsWith("assignee")) {
+            inAssignee=true;
+        }
+
+        if(inAssignee&&qName.equals("orgname")) {
+            isOrgname=true;
         }
     }
 
@@ -141,13 +147,20 @@ public class SAXHandler extends DefaultHandler{
             documentPieces.clear();
         }*/
 
-        if(qName.toLowerCase().endsWith("inventor")||qName.toLowerCase().endsWith("applicant")) {
-            isInventor=false;
+        if(inAssignee&&qName.equalsIgnoreCase("orgname")) {
+            isOrgname=false;
             List<String> tokens = extractTokens(String.join(" ",documentPieces),false);
             if(tokens.size() > 5) {
-                inventors.add(String.join(" ",tokens).toUpperCase());
+                String assignee = String.join(" ",tokens).toUpperCase().replaceAll("[^A-Z0-9 ]","").trim();
+                if(assignee.length()>0) {
+                    assignees.add(assignee);
+                }
             }
             documentPieces.clear();
+        }
+
+        if(qName.toLowerCase().endsWith("assignee")) {
+            inAssignee=false;
         }
     }
 
@@ -159,7 +172,7 @@ public class SAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if((!shouldTerminate)&&(isClaim||isDocNumber||isAbstract||isInventor)){
+        if((!shouldTerminate)&&(isClaim||isDocNumber||isAbstract||isOrgname)){
             documentPieces.add(new String(ch,start,length));
         }
 

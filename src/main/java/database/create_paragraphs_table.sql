@@ -4,8 +4,8 @@
 -- CREATE THE TABLE FOR PATENT SENTENCE TOKENS
 CREATE TABLE paragraph_tokens (
     pub_doc_number varchar(25) not null,
-    classifications text[] not null,
-    inventors text[] not null,
+    classifications text[] not null default('{}'::text[]),
+    assignees text[] not null default('{}'::text[]),
     tokens text[] not null,
     randomizer double precision not null default(random())
 );

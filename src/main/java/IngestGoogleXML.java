@@ -115,7 +115,7 @@ public class IngestGoogleXML {
                                     saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
 
                                     if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
-                                        Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
+                                        Database.ingestRecords(handler.getPatentNumber(),handler.getAssignees(),handler.getFullDocuments());
                                     }
 
                                     lines.clear();
@@ -132,7 +132,7 @@ public class IngestGoogleXML {
                                 saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
 
                                 if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
-                                    Database.ingestRecords(handler.getPatentNumber(),handler.getInventors(),handler.getFullDocuments());
+                                    Database.ingestRecords(handler.getPatentNumber(),handler.getAssignees(),handler.getFullDocuments());
                                 }
                                 lines.clear();
                                 handler.reset();
