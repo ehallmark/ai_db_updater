@@ -149,8 +149,7 @@ public class SAXHandler extends DefaultHandler{
 
         if(inAssignee&&qName.equalsIgnoreCase("orgname")) {
             isOrgname=false;
-            List<String> tokens = extractTokens(String.join(" ",documentPieces),false);
-            String assignee = String.join(" ",tokens).toUpperCase().replaceAll("[^A-Z0-9 ]","").trim();
+            String assignee = String.join(" ",documentPieces).toUpperCase().replaceAll("[^A-Z0-9 ]","").trim();
             if(assignee.length()>0) {
                 assignees.add(assignee);
             }
