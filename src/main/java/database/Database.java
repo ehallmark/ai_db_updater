@@ -119,15 +119,17 @@ public class Database {
     }
 
     public static void ingestRecords(String patentNumber,Set<String> assigneeData, List<List<String>> documents) throws SQLException {
-        System.out.println("Ingesting: "+patentNumber);
-        Set<String> classificationData = patentToClassificationHash.get(patentNumber);
         PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,classifications,assignees,tokens) VALUES (?,?,?,?) ON CONFLICT DO NOTHING");
+        System.out.println("Ingesting Patent: "+patentNumber+", Assignee(s): "+String.join("; ",assigneeData));
+        Set<String> classificationData = patentToClassificationHash.get(patentNumber);
+        final Set<String> cleanAssigneeData = assigneeData==null ? Collections.emptySet() : assigneeData;
+        final Set<String> cleanClassificationData = classificationData==null ? Collections.emptySet() : classificationData;
         documents.forEach(doc->{
             try {
                 synchronized (ps) {
                     ps.setString(1, patentNumber);
-                    ps.setArray(2, conn.createArrayOf("varchar", classificationData.toArray()));
-                    ps.setArray(3, conn.createArrayOf("varchar", assigneeData.toArray()));
+                    ps.setArray(2, conn.createArrayOf("varchar", cleanClassificationData.toArray()));
+                    ps.setArray(3, conn.createArrayOf("varchar", cleanAssigneeData.toArray()));
                     ps.setArray(4, conn.createArrayOf("varchar", doc.toArray()));
                     ps.executeUpdate();
                 }

@@ -56,103 +56,118 @@ public class IngestGoogleXML {
                     @Override
                     protected void compute() {
                         try {
-                            String dateStr = String.format("%06d",finalLastIngestedDate);
-                            URL website = new URL(base_url+"/20"+dateStr.substring(0,2)+"/ipg" + String.format("%06d",finalLastIngestedDate) + ".zip");
-                            System.out.println("Trying: "+website.toString());
-                            ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                            FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
-                            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                            fos.close();
-                        } catch(Exception e) {
-                            // try non Google
                             try {
                                 String dateStr = String.format("%06d", finalLastIngestedDate);
-                                URL website = new URL(secondary_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", finalLastIngestedDate) + ".zip");
+                                URL website = new URL(base_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", finalLastIngestedDate) + ".zip");
                                 System.out.println("Trying: " + website.toString());
                                 ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                                FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME+finalLastIngestedDate);
+                                FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME + finalLastIngestedDate);
                                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
                                 fos.close();
-                            } catch(Exception e2) {
-                                System.out.println("Not found");
-                                return;
+
+                                try {
+                                    // Unzip file
+                                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME + finalLastIngestedDate)));
+                                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME + finalLastIngestedDate)));
+                                    ZipHelper.unzip(bis, bos);
+                                    bis.close();
+                                    bos.close();
+                                } catch (Exception e) {
+                                    System.out.println("Unable to unzip google file");
+                                }
+                            } catch (Exception e) {
+                                // try non Google
+                                try {
+                                    String dateStr = String.format("%06d", finalLastIngestedDate);
+                                    URL website = new URL(secondary_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", finalLastIngestedDate) + ".zip");
+                                    System.out.println("Trying: " + website.toString());
+                                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                                    FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME + finalLastIngestedDate);
+                                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                                    fos.close();
+                                } catch (Exception e2) {
+                                    System.out.println("Not found");
+                                    return;
+                                }
+
+                                try {
+                                    // Unzip file
+                                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME + finalLastIngestedDate)));
+                                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME + finalLastIngestedDate)));
+                                    ZipHelper.unzip(bis, bos);
+                                    bis.close();
+                                    bos.close();
+                                } catch (Exception e2) {
+                                    System.out.println("Unable to unzip file");
+                                    return;
+                                }
                             }
-                        }
-
-                        try {
-                            // Unzip file
-                            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME+finalLastIngestedDate)));
-                            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME+finalLastIngestedDate)));
-                            ZipHelper.unzip(bis, bos);
-                            bis.close();
-                            bos.close();
-                        } catch(Exception e) {
-                            System.out.println("Unable to unzip file");
-                            return;
-                        }
-                        // Ingest data for each file
-                        try {
-
-                            SAXParserFactory factory = SAXParserFactory.newInstance();
-                            factory.setNamespaceAware(false);
-                            factory.setValidating(false);
-                            // security vulnerable
-                            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-                            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-                            SAXParser saxParser = factory.newSAXParser();
-
-                            SAXHandler handler = new SAXHandler();
 
 
-                            FileReader fr = new FileReader(new File(DESTINATION_FILE_NAME+finalLastIngestedDate));
-                            BufferedReader br = new BufferedReader(fr);
-                            String line;
-                            boolean firstLine = true;
-                            List<String> lines = new ArrayList<>();
-                            while ((line = br.readLine()) != null) {
-                                if (line.contains("<?xml") && !firstLine) {
-                                    // stop
-                                    saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
+                            // Ingest data for each file
+                            try {
+
+                                SAXParserFactory factory = SAXParserFactory.newInstance();
+                                factory.setNamespaceAware(false);
+                                factory.setValidating(false);
+                                // security vulnerable
+                                factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                                factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+                                SAXParser saxParser = factory.newSAXParser();
+
+                                SAXHandler handler = new SAXHandler();
+
+
+                                FileReader fr = new FileReader(new File(DESTINATION_FILE_NAME + finalLastIngestedDate));
+                                BufferedReader br = new BufferedReader(fr);
+                                String line;
+                                boolean firstLine = true;
+                                List<String> lines = new ArrayList<>();
+                                while ((line = br.readLine()) != null) {
+                                    if (line.contains("<?xml") && !firstLine) {
+                                        // stop
+                                        saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
+
+                                        if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
+                                            Database.ingestRecords(handler.getPatentNumber(), handler.getAssignees(), handler.getFullDocuments());
+                                        }
+
+                                        lines.clear();
+                                        handler.reset();
+                                    }
+                                    if (firstLine) firstLine = false;
+                                    lines.add(line);
+                                }
+                                br.close();
+                                fr.close();
+
+                                // get the last one
+                                if (!lines.isEmpty()) {
+                                    saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
 
                                     if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
-                                        Database.ingestRecords(handler.getPatentNumber(),handler.getAssignees(),handler.getFullDocuments());
+                                        Database.ingestRecords(handler.getPatentNumber(), handler.getAssignees(), handler.getFullDocuments());
                                     }
-
                                     lines.clear();
                                     handler.reset();
                                 }
-                                if(firstLine) firstLine = false;
-                                lines.add(line);
-                            }
-                            br.close();
-                            fr.close();
 
-                            // get the last one
-                            if(!lines.isEmpty()) {
-                                saxParser.parse(new ByteArrayInputStream(String.join("",lines).getBytes()), handler);
+                                // Commit results to DB and update last ingest table
+                                //Database.updateLastIngestedDate(finalLastIngestedDate);
 
-                                if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
-                                    Database.ingestRecords(handler.getPatentNumber(),handler.getAssignees(),handler.getFullDocuments());
-                                }
-                                lines.clear();
-                                handler.reset();
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
 
-                            // Commit results to DB and update last ingest table
-                            //Database.updateLastIngestedDate(finalLastIngestedDate);
+                        } finally {
+                            // cleanup
+                            // Delete zip and related folders
+                            File zipFile = new File(ZIP_FILE_NAME + finalLastIngestedDate);
+                            if (zipFile.exists()) zipFile.delete();
 
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            File xmlFile = new File(DESTINATION_FILE_NAME + finalLastIngestedDate);
+                            if (xmlFile.exists()) xmlFile.delete();
                         }
-
-                        // cleanup
-
-                        // Delete zip and related folders
-                        File zipFile = new File(ZIP_FILE_NAME+finalLastIngestedDate);
-                        if (zipFile.exists()) zipFile.delete();
-
-                        File xmlFile = new File(DESTINATION_FILE_NAME+finalLastIngestedDate);
-                        if (xmlFile.exists()) xmlFile.delete();
 
                     }
                 };

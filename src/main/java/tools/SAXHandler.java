@@ -89,7 +89,7 @@ public class SAXHandler extends DefaultHandler{
             inAssignee=true;
         }
 
-        if(inAssignee&&qName.equals("orgname")) {
+        if(inAssignee&&qName.equalsIgnoreCase("orgname")) {
             isOrgname=true;
         }
     }
