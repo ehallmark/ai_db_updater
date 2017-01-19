@@ -27,6 +27,8 @@ public class Database {
     private static String CPC_DESTINATION_FILE_NAME = "patent_grant_classifications_folder";
     private static String ASSIGNEE_ZIP_FILE_NAME = "patent_grant_assignees.zip";
     private static String ASSIGNEE_DESTINATION_FILE_NAME = "patent_grant_assignees_folder";
+    private static String MAINT_ZIP_FILE_NAME = "patent_grant_maint_fees_folder";
+    private static String MAINT_DESTINATION_FILE_NAME = "patent_grant_maint_fees_folder";
 
     static {
         try {
@@ -37,13 +39,76 @@ public class Database {
         }
     }
 
-    public static ResultSet loadAssignees() throws SQLException {
+    public static ResultSet loadPatentNumbersWithAssignees() throws SQLException {
         PreparedStatement ps = conn.prepareStatement("select distinct on (pub_doc_number) pub_doc_number, assignees from paragraph_tokens order by pub_doc_number");
         ps.setFetchSize(5);
         return ps.executeQuery();
     }
 
-    public static void setupLatestAssigneesFromAssignmentRecords() throws Exception {
+    public static void loadAndIngestMaintenanceFeeData() throws Exception {
+        Set<String> allPatents = loadAllPatents();
+        // should be one at least every other month
+        // Load file from Google
+        if(! (new File(MAINT_DESTINATION_FILE_NAME).exists())) {
+            boolean found = false;
+            LocalDate date = LocalDate.now();
+            while (!found) {
+                try {
+                    String dateStr = String.format("%04d", date.getYear()) + "-" + String.format("%02d", date.getMonthValue()) + "-" + String.format("%02d", date.getDayOfMonth());
+                    String url = "http://patents.reedtech.com/downloads/PatentClassInfo/ClassData/US_Grant_CPC_MCF_Text_" + dateStr + ".zip";
+                    URL website = new URL(url);
+                    System.out.println("Trying: " + website.toString());
+                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                    FileOutputStream fos = new FileOutputStream(MAINT_ZIP_FILE_NAME);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                    fos.close();
+
+                    ZipFile zipFile = new ZipFile(MAINT_ZIP_FILE_NAME);
+                    zipFile.extractAll(MAINT_DESTINATION_FILE_NAME);
+
+                    found = true;
+                } catch (Exception e) {
+                    //e.printStackTrace();
+                    System.out.println("Not found");
+                }
+                date = date.minusDays(1);
+            }
+        }
+
+
+        Arrays.stream(new File(MAINT_DESTINATION_FILE_NAME).listFiles()).forEach(file->{
+            if(!file.getName().endsWith(".txt")) return;
+            try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line = reader.readLine();
+                while(line!=null) {
+                    if(line.length() >= 50) {
+                        String patNum = line.substring(0, 7);
+                        if(allPatents.contains(patNum)) { // should update
+                            try {
+                                if (Integer.valueOf(patNum) >= 6000000) {
+                                    String maintenanceCode = line.substring(46, 51).trim();
+                                    if (patNum != null && maintenanceCode != null && maintenanceCode.equals("EXP.")) {
+                                        System.out.println(patNum + " has expired... Updating database now.");
+                                        updateIsExpiredForPatent(patNum, true);
+                                    }
+                                }
+                            } catch (NumberFormatException nfe) {
+                                // not a utility patent
+                                // skip...
+                            }
+                        } else {
+                            System.out.println(patNum+ " not expired");
+                        }
+                    }
+                    line = reader.readLine();
+                }
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public static Set<String> loadAllPatents() throws SQLException {
         // Get all pub_doc_numbers
         PreparedStatement ps = conn.prepareStatement("select distinct pub_doc_number from paragraph_tokens");
         Set<String> allPatents = new HashSet<>();
@@ -53,6 +118,11 @@ public class Database {
             allPatents.add(rs.getString(1));
         }
         System.out.println("Finished loading...");
+        return allPatents;
+    }
+
+    public static void setupLatestAssigneesFromAssignmentRecords() throws Exception {
+        Set<String> allPatents = loadAllPatents();
 
         // go through assignment xml data and update records using assignment sax handler
         LocalDate date = LocalDate.now();
@@ -146,6 +216,13 @@ public class Database {
     public static void updateAssigneeForPatent(String patent, String[] latestAssignees) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("update paragraph_tokens set assignees=? where pub_doc_number=?");
         ps.setArray(1, conn.createArrayOf("varchar",latestAssignees));
+        ps.setString(2,patent);
+        ps.executeUpdate();
+    }
+
+    public static void updateIsExpiredForPatent(String patent, boolean isExpired) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement("update paragraph_tokens set is_expired=? where pub_doc_number=?");
+        ps.setBoolean(1, isExpired);
         ps.setString(2,patent);
         ps.executeUpdate();
     }

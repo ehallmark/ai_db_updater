@@ -18,4 +18,6 @@ CLUSTER paragraph_tokens USING paragraph_tokens_random_idx;
 
 DROP INDEX paragraph_tokens_random_idx;
 
+ALTER TABLE paragraph_tokens ADD COLUMN is_expired boolean not null default(FALSE);
+
 pg_dump -Fc -d paragraph_tokens > paragraph_tokens.dump

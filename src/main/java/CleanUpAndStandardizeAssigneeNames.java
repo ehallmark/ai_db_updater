@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class CleanUpAndStandardizeAssigneeNames {
     public static void run() throws SQLException {
-        ResultSet rs = Database.loadAssignees();
+        ResultSet rs = Database.loadPatentNumbersWithAssignees();
         try {
             while (rs.next()) {
                 String patent = rs.getString(1);
