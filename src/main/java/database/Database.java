@@ -45,7 +45,7 @@ public class Database {
             allPatents.add(rs.getString(1));
         }
         System.out.println("Finished loading...");
-        
+
         // go through assignment xml data and update records using assignment sax handler
         LocalDate date = LocalDate.now();
         String endDateStr = String.valueOf(date.getYear()).substring(2, 4) + String.format("%02d", date.getMonthValue()) + String.format("%02d", date.getDayOfMonth());
