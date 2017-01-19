@@ -10,7 +10,7 @@ public class UpdateAssigneesWithAssignmentData {
     public static void main(String[] args) {
         try {
             // update latest assignees
-            System.out.println("Starting update latest assignees...");
+            System.out.println("Starting to update latest assignees...");
             Database.setupLatestAssigneesFromAssignmentRecords();
             Database.commit();
         } catch(Exception sql) {
