@@ -14,6 +14,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -111,10 +112,13 @@ public class Database {
     public static Set<String> loadAllPatents() throws SQLException {
         // Get all pub_doc_numbers
         PreparedStatement ps = conn.prepareStatement("select distinct pub_doc_number from paragraph_tokens");
+        ps.setFetchSize(5);
         Set<String> allPatents = new HashSet<>();
         ResultSet rs = ps.executeQuery();
         System.out.println("Loading all patent numbers from db...");
+        AtomicInteger cnt = new AtomicInteger(0);
         while (rs.next()) {
+            System.out.println(cnt.getAndIncrement());
             allPatents.add(rs.getString(1));
         }
         System.out.println("Finished loading...");
