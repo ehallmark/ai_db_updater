@@ -109,14 +109,17 @@ public class Database {
                     factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
                     SAXParser saxParser = factory.newSAXParser();
 
-                    AssignmentSAXHandler handler = new AssignmentSAXHandler(allPatents);
-
-                    FileInputStream fis = new FileInputStream(new File(ASSIGNEE_DESTINATION_FILE_NAME));
-                    BufferedInputStream bis = new BufferedInputStream(fis);
-                    saxParser.parse(bis, handler);
-                    Database.commit();
-                    fis.close();
-                    bis.close();
+                    for(File file : new File(ASSIGNEE_DESTINATION_FILE_NAME).listFiles()) {
+                        if(!file.getName().endsWith(".xml")) continue;
+                        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+                            AssignmentSAXHandler handler = new AssignmentSAXHandler(allPatents);
+                            saxParser.parse(bis, handler);
+                            Database.commit();
+                        } catch(Exception e) {
+                            System.out.println("Error ingesting file: "+file.getName());
+                            e.printStackTrace();
+                        }
+                    }
 
                 } catch (Exception e) {
                     e.printStackTrace();
