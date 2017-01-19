@@ -23,8 +23,10 @@ public class Database {
     private static final String patentDBUrl = "jdbc:postgresql://localhost/patentdb?user=postgres&password=&tcpKeepAlive=true";
     private static Connection conn;
     private static Map<String,Set<String>> patentToClassificationHash;
-    private static String ZIP_FILE_NAME = "patent_grant_classifications.zip";
-    private static String DESTINATION_FILE_NAME = "patent_grant_classifications_folder";
+    private static String CPC_ZIP_FILE_NAME = "patent_grant_classifications.zip";
+    private static String CPC_DESTINATION_FILE_NAME = "patent_grant_classifications_folder";
+    private static String ASSIGNEE_ZIP_FILE_NAME = "patent_grant_assignees.zip";
+    private static String ASSIGNEE_DESTINATION_FILE_NAME = "patent_grant_assignees_folder";
 
     static {
         try {
@@ -79,19 +81,16 @@ public class Database {
 
             try {
                 try {
+                    // Unzip file
                     URL website = new URL(finalUrlString);
                     System.out.println("Trying: " + website.toString());
                     ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                    FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME);
+                    FileOutputStream fos = new FileOutputStream(ASSIGNEE_ZIP_FILE_NAME);
                     fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
                     fos.close();
 
-                    // Unzip file
-                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME)));
-                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME)));
-                    ZipHelper.unzip(bis, bos);
-                    bis.close();
-                    bos.close();
+                    ZipFile zipFile = new ZipFile(ASSIGNEE_ZIP_FILE_NAME);
+                    zipFile.extractAll(ASSIGNEE_DESTINATION_FILE_NAME);
 
                 } catch (Exception e) {
                     System.out.println("Unable to get file");
@@ -112,7 +111,7 @@ public class Database {
 
                     AssignmentSAXHandler handler = new AssignmentSAXHandler(allPatents);
 
-                    FileInputStream fis = new FileInputStream(new File(DESTINATION_FILE_NAME));
+                    FileInputStream fis = new FileInputStream(new File(ASSIGNEE_DESTINATION_FILE_NAME));
                     BufferedInputStream bis = new BufferedInputStream(fis);
                     saxParser.parse(bis, handler);
                     Database.commit();
@@ -126,10 +125,10 @@ public class Database {
             } finally {
                 // cleanup
                 // Delete zip and related folders
-                File zipFile = new File(ZIP_FILE_NAME);
+                File zipFile = new File(ASSIGNEE_ZIP_FILE_NAME);
                 if (zipFile.exists()) zipFile.delete();
 
-                File xmlFile = new File(DESTINATION_FILE_NAME);
+                File xmlFile = new File(ASSIGNEE_DESTINATION_FILE_NAME);
                 if (xmlFile.exists()) xmlFile.delete();
             }
         }
@@ -146,7 +145,7 @@ public class Database {
         // should be one at least every other month
         // Load file from Google
         patentToClassificationHash = new HashMap<>();
-        if(! (new File(DESTINATION_FILE_NAME).exists())) {
+        if(! (new File(CPC_DESTINATION_FILE_NAME).exists())) {
             boolean found = false;
             LocalDate date = LocalDate.now();
             while (!found) {
@@ -156,12 +155,12 @@ public class Database {
                     URL website = new URL(url);
                     System.out.println("Trying: " + website.toString());
                     ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                    FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME);
+                    FileOutputStream fos = new FileOutputStream(CPC_ZIP_FILE_NAME);
                     fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
                     fos.close();
 
-                    ZipFile zipFile = new ZipFile(ZIP_FILE_NAME);
-                    zipFile.extractAll(DESTINATION_FILE_NAME);
+                    ZipFile zipFile = new ZipFile(CPC_ZIP_FILE_NAME);
+                    zipFile.extractAll(CPC_DESTINATION_FILE_NAME);
 
                     found = true;
                 } catch (Exception e) {
@@ -173,7 +172,7 @@ public class Database {
         }
 
 
-        Arrays.stream(new File(DESTINATION_FILE_NAME).listFiles(File::isDirectory)[0].listFiles()).forEach(file->{
+        Arrays.stream(new File(CPC_DESTINATION_FILE_NAME).listFiles(File::isDirectory)[0].listFiles()).forEach(file->{
             try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 String line = reader.readLine();
                 while(line!=null) {
