@@ -97,7 +97,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         try {
                             Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
                         } catch (SQLException sql) {
-                            System.out.print("SQL ERROR: ");
+                            System.out.println("SQL ERROR: ");
                             sql.printStackTrace();
                         }
                     } else {
@@ -114,6 +114,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
             if(text==null||text.length()==0||!text.startsWith("ASSIGNMENT OF ASSIGNOR")) {
                 shouldTerminate = true;
             }
+            documentPieces.clear();
         }
 
         if(inPatentAssignment&&qName.equals("document-id")){
@@ -124,6 +125,8 @@ public class AssignmentSAXHandler extends DefaultHandler{
             isDocNumber = false;
             String text = cleanAssignee(String.join("",documentPieces));
             currentPatents.add(text);
+            documentPieces.clear();
+
         }
 
         if(inPatentAssignment&&qName.equals("patent-assignee")) {
@@ -136,6 +139,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
             if(text!=null&&text.length()>0) {
                 currentAssignees.add(text);
             }
+            documentPieces.clear();
         }
 
     }
