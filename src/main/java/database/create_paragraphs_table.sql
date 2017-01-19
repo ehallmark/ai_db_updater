@@ -17,3 +17,5 @@ CREATE INDEX paragraph_tokens_pub_doc_number_idx on paragraph_tokens (pub_doc_nu
 CLUSTER paragraph_tokens USING paragraph_tokens_random_idx;
 
 DROP INDEX paragraph_tokens_random_idx;
+
+pg_dump -Fc -d paragraph_tokens > paragraph_tokens.dump
