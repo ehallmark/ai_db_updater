@@ -47,7 +47,6 @@ public class Database {
     }
 
     public static void loadAndIngestMaintenanceFeeData() throws Exception {
-        Set<String> allPatents = loadAllPatents();
         // should be one at least every other month
         // Load file from Google
         if(! (new File(MAINT_DESTINATION_FILE_NAME).exists())) {
@@ -56,7 +55,7 @@ public class Database {
             while (!found) {
                 try {
                     String dateStr = String.format("%04d", date.getYear()) + "-" + String.format("%02d", date.getMonthValue()) + "-" + String.format("%02d", date.getDayOfMonth());
-                    String url = "http://patents.reedtech.com/downloads/PatentClassInfo/ClassData/US_Grant_CPC_MCF_Text_" + dateStr + ".zip";
+                    String url = "http://patents.reedtech.com/downloads/PatentClassInfo/MAINTENANCEFEEES" + dateStr + ".zip";
                     URL website = new URL(url);
                     System.out.println("Trying: " + website.toString());
                     ReadableByteChannel rbc = Channels.newChannel(website.openStream());
@@ -84,21 +83,17 @@ public class Database {
                 while(line!=null) {
                     if(line.length() >= 50) {
                         String patNum = line.substring(0, 7);
-                        if(allPatents.contains(patNum)) { // should update
-                            try {
-                                if (Integer.valueOf(patNum) >= 6000000) {
-                                    String maintenanceCode = line.substring(46, 51).trim();
-                                    if (patNum != null && maintenanceCode != null && maintenanceCode.equals("EXP.")) {
-                                        System.out.println(patNum + " has expired... Updating database now.");
-                                        updateIsExpiredForPatent(patNum, true);
-                                    }
+                        try {
+                            if (Integer.valueOf(patNum) >= 6000000) {
+                                String maintenanceCode = line.substring(46, 51).trim();
+                                if (patNum != null && maintenanceCode != null && maintenanceCode.equals("EXP.")) {
+                                    System.out.println(patNum + " has expired... Updating database now.");
+                                    updateIsExpiredForPatent(patNum, true);
                                 }
-                            } catch (NumberFormatException nfe) {
-                                // not a utility patent
-                                // skip...
                             }
-                        } else {
-                            System.out.println(patNum+ " not expired");
+                        } catch (NumberFormatException nfe) {
+                            // not a utility patent
+                            // skip...
                         }
                     }
                     line = reader.readLine();
@@ -110,15 +105,14 @@ public class Database {
     }
 
     public static Set<String> loadAllPatents() throws SQLException {
+        System.out.println("Loading all patent numbers from db...");
         // Get all pub_doc_numbers
         PreparedStatement ps = conn.prepareStatement("select distinct pub_doc_number from paragraph_tokens");
         //ps.setFetchSize(100);
         Set<String> allPatents = new HashSet<>();
         ResultSet rs = ps.executeQuery();
-        System.out.println("Loading all patent numbers from db...");
         AtomicInteger cnt = new AtomicInteger(0);
         while (rs.next()) {
-            System.out.println(cnt.getAndIncrement());
             allPatents.add(rs.getString(1));
         }
         System.out.println("Finished loading...");
@@ -126,8 +120,6 @@ public class Database {
     }
 
     public static void setupLatestAssigneesFromAssignmentRecords() throws Exception {
-        Set<String> allPatents = loadAllPatents();
-
         // go through assignment xml data and update records using assignment sax handler
         LocalDate date = LocalDate.now();
         String endDateStr = String.valueOf(date.getYear()).substring(2, 4) + String.format("%02d", date.getMonthValue()) + String.format("%02d", date.getDayOfMonth());
@@ -180,7 +172,6 @@ public class Database {
 
                 // Ingest data for each file
                 try {
-
                     SAXParserFactory factory = SAXParserFactory.newInstance();
                     factory.setNamespaceAware(false);
                     factory.setValidating(false);
@@ -195,7 +186,7 @@ public class Database {
                             continue;
                         }
                         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
-                            AssignmentSAXHandler handler = new AssignmentSAXHandler(allPatents);
+                            AssignmentSAXHandler handler = new AssignmentSAXHandler();
                             saxParser.parse(bis, handler);
                             Database.commit();
                         } catch(Exception e) {

@@ -24,14 +24,10 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private boolean inDocumentID=false;
     private boolean isDocNumber=false;
     boolean shouldTerminate = false;
-    private Set<String> allPatents;
     private List<String>documentPieces=new ArrayList<>();
     private List<String> currentPatents = new ArrayList<>();
     private List<String> currentAssignees = new ArrayList<>();
 
-    public AssignmentSAXHandler(Set<String> allPatents) {
-        this.allPatents=allPatents;
-    }
 
     public void reset() {
         // DO NOT CLEAR PATENT TO ASSIGNEE MAP!!!!
@@ -90,7 +86,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
             if(!shouldTerminate&&!currentAssignees.isEmpty()) {
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
-                    if(patent!=null&&!patent.isEmpty()&&allPatents.contains(patent)) {
+                    if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
                         System.out.println("Updating " + patent + " with assignees: " + String.join("; ", currentAssignees));
                         try {
                             Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
