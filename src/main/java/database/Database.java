@@ -74,7 +74,7 @@ public class Database {
                 }
                 finalUrlString=base_url + String.format("%06d", lastIngestedDate) + ".zip";
             } else {
-                finalUrlString=base_url + backYearDates.remove(0);
+                finalUrlString=base_url + backYearDates.remove(0) + ".zip";
             }
 
             try {
