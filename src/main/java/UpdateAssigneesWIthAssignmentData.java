@@ -5,7 +5,7 @@ import main.java.database.Database;
 /**
  * Created by ehallmark on 1/19/17.
  */
-public class UpdateAssigneesWIthAssignmentData {
+public class UpdateAssigneesWithAssignmentData {
 
     public static void main(String[] args) {
         try {
