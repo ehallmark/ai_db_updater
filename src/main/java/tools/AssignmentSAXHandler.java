@@ -23,11 +23,13 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private boolean isName=false;
     private boolean inDocumentID=false;
     private boolean isDocNumber=false;
+    private boolean isDocKind=false;
     boolean shouldTerminate = false;
     private Set<String> allPatents;
-    List<String>documentPieces=new ArrayList<>();
-    List<String> currentPatents = new ArrayList<>();
-    List<String> currentAssignees = new ArrayList<>();
+    private List<String>documentPieces=new ArrayList<>();
+    private List<String> currentPatents = new ArrayList<>();
+    private List<String> currentAssignees = new ArrayList<>();
+    private List<String> currentDocKinds = new ArrayList<>();
 
     public AssignmentSAXHandler(Set<String> allPatents) {
         this.allPatents=allPatents;
@@ -39,10 +41,12 @@ public class AssignmentSAXHandler extends DefaultHandler{
         isConveyanceText=false;
         inPatentAssignee=false;
         isDocNumber=false;
+        isDocKind=false;
         inDocumentID=false;
         isName=false;
         shouldTerminate = false;
         currentAssignees.clear();
+        currentDocKinds.clear();
         currentPatents.clear();
         documentPieces.clear();
     }
@@ -69,6 +73,10 @@ public class AssignmentSAXHandler extends DefaultHandler{
             isDocNumber = true;
         }
 
+        if(inDocumentID&&qName.equals("doc-kind")) {
+            isDocKind = true;
+        }
+
         if(inPatentAssignment&&qName.equals("patent-assignee")) {
             inPatentAssignee=true;
         }
@@ -88,19 +96,23 @@ public class AssignmentSAXHandler extends DefaultHandler{
             inPatentAssignment=false;
             // done with patent so update patent map and reset data
             if(!currentAssignees.isEmpty()) {
-                currentPatents.forEach(patent -> {
-                    if(allPatents.contains(patent)) {
-                        System.out.println("Updating "+patent+" with assignees: "+String.join("; ",currentAssignees));
-                        try {
-                            Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
-                        } catch(SQLException sql) {
-                            System.out.print("SQL ERROR: ");
-                            sql.printStackTrace();
+                for(int i = 0; i < currentPatents.size(); i++) {
+                    String patent = currentPatents.get(i);
+                    String docKind = currentDocKinds.get(i);
+                    if(docKind!=null&&docKind.startsWith("B")&&patent!=null&&!patent.isEmpty()) {
+                        if (allPatents.contains(patent)) {
+                            System.out.println("Updating " + patent + " with assignees: " + String.join("; ", currentAssignees));
+                            try {
+                                Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
+                            } catch (SQLException sql) {
+                                System.out.print("SQL ERROR: ");
+                                sql.printStackTrace();
+                            }
+                        } else {
+                            System.out.println(patent + " does not exist in database");
                         }
-                    } else {
-                        System.out.println(patent+" does not exist in database");
                     }
-                });
+                }
             }
             reset();
         }
@@ -120,9 +132,13 @@ public class AssignmentSAXHandler extends DefaultHandler{
         if(inDocumentID&&qName.equals("doc-number")) {
             isDocNumber = false;
             String text = cleanAssignee(String.join("",documentPieces));
-            if(text!=null&&text.length()>0) {
-                currentPatents.add(text);
-            }
+            currentPatents.add(text);
+        }
+
+        if(inDocumentID&&qName.equals("doc-kind")) {
+            isDocKind = false;
+            String text = cleanAssignee(String.join("",documentPieces));
+            currentDocKinds.add(text);
         }
 
         if(inPatentAssignment&&qName.equals("patent-assignee")) {
@@ -147,7 +163,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if((!shouldTerminate)&&(isName||isDocNumber||isConveyanceText)){
+        if((!shouldTerminate)&&(isName||isDocNumber||isDocKind||isConveyanceText)){
             documentPieces.add(new String(ch,start,length));
         }
 
