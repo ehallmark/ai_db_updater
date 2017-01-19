@@ -194,6 +194,8 @@ public class Database {
                         } catch(Exception e) {
                             System.out.println("Error ingesting file: "+file.getName());
                             e.printStackTrace();
+                        } finally {
+                            file.delete();
                         }
                     }
 
