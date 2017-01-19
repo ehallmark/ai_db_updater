@@ -1,15 +1,17 @@
 package main.java.database;
 
+import main.java.tools.AssignmentSAXHandler;
+import main.java.tools.SAXHandler;
+import main.java.tools.ZipHelper;
 import net.lingala.zip4j.core.ZipFile;
 
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,13 +30,105 @@ public class Database {
         try {
             conn = DriverManager.getConnection(patentDBUrl);
             conn.setAutoCommit(false);
-            setupClassificationsHash();
         } catch(Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static void setupClassificationsHash() throws Exception{
+    public static void setupLatestAssigneesFromAssignmentRecords() throws Exception {
+        // Get all pub_doc_numbers
+        PreparedStatement ps = conn.prepareStatement("select distinct pub_doc_number from paragraph_tokens");
+        Set<String> allPatents = new HashSet<>();
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            allPatents.add(rs.getString(1));
+        }
+        // go through assignment xml data and update records using assignment sax handler
+        LocalDate date = LocalDate.now();
+        String endDateStr = String.valueOf(date.getYear()).substring(2, 4) + String.format("%02d", date.getMonthValue()) + String.format("%02d", date.getDayOfMonth());
+        Integer endDateInt = Integer.valueOf(endDateStr);
+
+        int lastIngestedDate = 160000;
+        System.out.println("Starting with date: " + lastIngestedDate);
+        System.out.println("Ending with date: " + endDateInt);
+        String base_url = "https://bulkdata.uspto.gov/data2/patent/assignment/ad20";
+        while (lastIngestedDate <= endDateInt) {
+            lastIngestedDate = lastIngestedDate + 1;
+            // don't over search days
+            if (lastIngestedDate % 100 > 31) {
+                lastIngestedDate = lastIngestedDate + 100 - (lastIngestedDate % 100);
+            }
+            if (lastIngestedDate % 10000 > 1231) {
+                lastIngestedDate = lastIngestedDate + 10000 - (lastIngestedDate % 10000);
+            }
+
+            final int finalLastIngestedDate = lastIngestedDate;
+            try {
+                try {
+                    URL website = new URL(base_url + String.format("%06d", finalLastIngestedDate) + ".zip");
+                    System.out.println("Trying: " + website.toString());
+                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                    FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME + finalLastIngestedDate);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                    fos.close();
+
+                    // Unzip file
+                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME + finalLastIngestedDate)));
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME + finalLastIngestedDate)));
+                    ZipHelper.unzip(bis, bos);
+                    bis.close();
+                    bos.close();
+
+                } catch (Exception e) {
+                    System.out.println("Unable to get file");
+                     continue;
+                }
+
+
+                // Ingest data for each file
+                try {
+
+                    SAXParserFactory factory = SAXParserFactory.newInstance();
+                    factory.setNamespaceAware(false);
+                    factory.setValidating(false);
+                    // security vulnerable
+                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+                    SAXParser saxParser = factory.newSAXParser();
+
+                    AssignmentSAXHandler handler = new AssignmentSAXHandler(allPatents);
+
+                    FileInputStream fis = new FileInputStream(new File(DESTINATION_FILE_NAME + finalLastIngestedDate));
+                    BufferedInputStream bis = new BufferedInputStream(fis);
+                    saxParser.parse(bis, handler);
+                    Database.commit();
+                    fis.close();
+                    bis.close();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            } finally {
+                // cleanup
+                // Delete zip and related folders
+                File zipFile = new File(ZIP_FILE_NAME + finalLastIngestedDate);
+                if (zipFile.exists()) zipFile.delete();
+
+                File xmlFile = new File(DESTINATION_FILE_NAME + finalLastIngestedDate);
+                if (xmlFile.exists()) xmlFile.delete();
+            }
+        }
+    }
+
+    public static void updateAssigneeForPatent(String patent, String[] latestAssignees) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement("update paragraph_tokens set assignees=? where pub_doc_number=?");
+        ps.setArray(1, conn.createArrayOf("varchar",latestAssignees));
+        ps.setString(2,patent);
+        ps.executeUpdate();
+    }
+
+    public static void setupClassificationsHash() throws Exception{
         // should be one at least every other month
         // Load file from Google
         patentToClassificationHash = new HashMap<>();

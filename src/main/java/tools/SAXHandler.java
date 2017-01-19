@@ -149,7 +149,7 @@ public class SAXHandler extends DefaultHandler{
 
         if(inAssignee&&qName.equalsIgnoreCase("orgname")) {
             isOrgname=false;
-            String assignee = String.join(" ",documentPieces).toUpperCase().replaceAll("[^A-Z0-9 ]","").trim();
+            String assignee = AssignmentSAXHandler.cleanAssignee(String.join(" ",documentPieces));
             if(assignee.length()>0) {
                 assignees.add(assignee);
             }

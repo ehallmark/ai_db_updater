@@ -10,6 +10,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ public class IngestGoogleXML {
 
     public static void main(String[] args) {
         try {
+            Database.setupClassificationsHash();
             final int numTasks = 24;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);
             // Get last ingested date
@@ -190,8 +192,16 @@ public class IngestGoogleXML {
             // Repeat
         } catch(Exception e) {
             e.printStackTrace();
-        } finally {
+        }
 
+        try {
+            // update latest assignees
+            System.out.println("Starting update latest assignees...");
+            Database.setupLatestAssigneesFromAssignmentRecords();
+            Database.commit();
+        } catch(Exception sql) {
+            sql.printStackTrace();
+        } finally {
             try {
                 Database.close();
             } catch(Exception sql) {
