@@ -111,8 +111,8 @@ public class Database {
 
     public static Set<String> loadAllPatents() throws SQLException {
         // Get all pub_doc_numbers
-        PreparedStatement ps = conn.prepareStatement("select pub_doc_number from paragraph_tokens");
-        ps.setFetchSize(5);
+        PreparedStatement ps = conn.prepareStatement("select distinct pub_doc_number from paragraph_tokens");
+        ps.setFetchSize(100);
         Set<String> allPatents = new HashSet<>();
         ResultSet rs = ps.executeQuery();
         System.out.println("Loading all patent numbers from db...");
