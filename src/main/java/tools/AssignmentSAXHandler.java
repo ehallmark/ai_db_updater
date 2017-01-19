@@ -23,7 +23,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private boolean isName=false;
     private boolean inDocumentID=false;
     private boolean isDocNumber=false;
-    private boolean isDocKind=false;
     boolean shouldTerminate = false;
     private Set<String> allPatents;
     private List<String>documentPieces=new ArrayList<>();
@@ -41,7 +40,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
         isConveyanceText=false;
         inPatentAssignee=false;
         isDocNumber=false;
-        isDocKind=false;
         inDocumentID=false;
         isName=false;
         shouldTerminate = false;
@@ -73,10 +71,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
             isDocNumber = true;
         }
 
-        if(inDocumentID&&qName.equals("doc-kind")) {
-            isDocKind = true;
-        }
-
         if(inPatentAssignment&&qName.equals("patent-assignee")) {
             inPatentAssignee=true;
         }
@@ -95,22 +89,19 @@ public class AssignmentSAXHandler extends DefaultHandler{
         if(qName.equals("patent-assignment")){
             inPatentAssignment=false;
             // done with patent so update patent map and reset data
-            if(!currentAssignees.isEmpty()) {
+            if(!shouldTerminate&&!currentAssignees.isEmpty()) {
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
-                    String docKind = currentDocKinds.get(i);
-                    if(docKind!=null&&docKind.startsWith("B")&&patent!=null&&!patent.isEmpty()) {
-                        if (allPatents.contains(patent)) {
-                            System.out.println("Updating " + patent + " with assignees: " + String.join("; ", currentAssignees));
-                            try {
-                                Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
-                            } catch (SQLException sql) {
-                                System.out.print("SQL ERROR: ");
-                                sql.printStackTrace();
-                            }
-                        } else {
-                            System.out.println(patent + " does not exist in database");
+                    if(patent!=null&&!patent.isEmpty()&&allPatents.contains(patent)) {
+                        System.out.println("Updating " + patent + " with assignees: " + String.join("; ", currentAssignees));
+                        try {
+                            Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
+                        } catch (SQLException sql) {
+                            System.out.print("SQL ERROR: ");
+                            sql.printStackTrace();
                         }
+                    } else {
+                        System.out.println(patent + " does not exist in database");
                     }
                 }
             }
@@ -135,12 +126,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
             currentPatents.add(text);
         }
 
-        if(inDocumentID&&qName.equals("doc-kind")) {
-            isDocKind = false;
-            String text = cleanAssignee(String.join("",documentPieces));
-            currentDocKinds.add(text);
-        }
-
         if(inPatentAssignment&&qName.equals("patent-assignee")) {
             inPatentAssignee=false;
         }
@@ -163,7 +148,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if((!shouldTerminate)&&(isName||isDocNumber||isDocKind||isConveyanceText)){
+        if((!shouldTerminate)&&(isName||isDocNumber||isConveyanceText)){
             documentPieces.add(new String(ch,start,length));
         }
 
