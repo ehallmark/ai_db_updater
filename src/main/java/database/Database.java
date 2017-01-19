@@ -48,33 +48,44 @@ public class Database {
         String endDateStr = String.valueOf(date.getYear()).substring(2, 4) + String.format("%02d", date.getMonthValue()) + String.format("%02d", date.getDayOfMonth());
         Integer endDateInt = Integer.valueOf(endDateStr);
 
+        final int backYearDataDate = 151231;
+        int numFilesForBackYearData = 14;
+        List<String> backYearDates = new ArrayList<>(numFilesForBackYearData);
+        for(int i = 1; i <= numFilesForBackYearData; i++) {
+            backYearDates.add(String.format("%06d", backYearDataDate)+"-"+String.format("%02d", i));
+        }
         int lastIngestedDate = 160000;
         System.out.println("Starting with date: " + lastIngestedDate);
         System.out.println("Ending with date: " + endDateInt);
         String base_url = "https://bulkdata.uspto.gov/data2/patent/assignment/ad20";
-        while (lastIngestedDate <= endDateInt) {
-            lastIngestedDate = lastIngestedDate + 1;
-            // don't over search days
-            if (lastIngestedDate % 100 > 31) {
-                lastIngestedDate = lastIngestedDate + 100 - (lastIngestedDate % 100);
-            }
-            if (lastIngestedDate % 10000 > 1231) {
-                lastIngestedDate = lastIngestedDate + 10000 - (lastIngestedDate % 10000);
+        while (lastIngestedDate <= endDateInt||backYearDates.size()>0) {
+            String finalUrlString;
+            if(backYearDates.isEmpty()) {
+                lastIngestedDate = lastIngestedDate + 1;
+                // don't over search days
+                if (lastIngestedDate % 100 > 31) {
+                    lastIngestedDate = lastIngestedDate + 100 - (lastIngestedDate % 100);
+                }
+                if (lastIngestedDate % 10000 > 1231) {
+                    lastIngestedDate = lastIngestedDate + 10000 - (lastIngestedDate % 10000);
+                }
+                finalUrlString=base_url + String.format("%06d", lastIngestedDate) + ".zip";
+            } else {
+                finalUrlString=backYearDates.remove(0);
             }
 
-            final int finalLastIngestedDate = lastIngestedDate;
             try {
                 try {
-                    URL website = new URL(base_url + String.format("%06d", finalLastIngestedDate) + ".zip");
+                    URL website = new URL(finalUrlString);
                     System.out.println("Trying: " + website.toString());
                     ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                    FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME + finalLastIngestedDate);
+                    FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME);
                     fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
                     fos.close();
 
                     // Unzip file
-                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME + finalLastIngestedDate)));
-                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME + finalLastIngestedDate)));
+                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(ZIP_FILE_NAME)));
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(DESTINATION_FILE_NAME)));
                     ZipHelper.unzip(bis, bos);
                     bis.close();
                     bos.close();
@@ -98,7 +109,7 @@ public class Database {
 
                     AssignmentSAXHandler handler = new AssignmentSAXHandler(allPatents);
 
-                    FileInputStream fis = new FileInputStream(new File(DESTINATION_FILE_NAME + finalLastIngestedDate));
+                    FileInputStream fis = new FileInputStream(new File(DESTINATION_FILE_NAME));
                     BufferedInputStream bis = new BufferedInputStream(fis);
                     saxParser.parse(bis, handler);
                     Database.commit();
@@ -112,10 +123,10 @@ public class Database {
             } finally {
                 // cleanup
                 // Delete zip and related folders
-                File zipFile = new File(ZIP_FILE_NAME + finalLastIngestedDate);
+                File zipFile = new File(ZIP_FILE_NAME);
                 if (zipFile.exists()) zipFile.delete();
 
-                File xmlFile = new File(DESTINATION_FILE_NAME + finalLastIngestedDate);
+                File xmlFile = new File(DESTINATION_FILE_NAME);
                 if (xmlFile.exists()) xmlFile.delete();
             }
         }
