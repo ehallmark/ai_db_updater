@@ -186,7 +186,10 @@ public class Database {
                     SAXParser saxParser = factory.newSAXParser();
 
                     for(File file : new File(ASSIGNEE_DESTINATION_FILE_NAME).listFiles()) {
-                        if(!file.getName().endsWith(".xml")) continue;
+                        if(!file.getName().endsWith(".xml")) {
+                            file.delete();
+                            continue;
+                        }
                         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
                             AssignmentSAXHandler handler = new AssignmentSAXHandler(allPatents);
                             saxParser.parse(bis, handler);
