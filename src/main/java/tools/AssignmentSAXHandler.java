@@ -28,7 +28,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private List<String>documentPieces=new ArrayList<>();
     private List<String> currentPatents = new ArrayList<>();
     private List<String> currentAssignees = new ArrayList<>();
-    private List<String> currentDocKinds = new ArrayList<>();
 
     public AssignmentSAXHandler(Set<String> allPatents) {
         this.allPatents=allPatents;
@@ -44,7 +43,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
         isName=false;
         shouldTerminate = false;
         currentAssignees.clear();
-        currentDocKinds.clear();
         currentPatents.clear();
         documentPieces.clear();
     }

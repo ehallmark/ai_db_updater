@@ -201,6 +201,16 @@ public class IngestGoogleXML {
             Database.commit();
         } catch(Exception sql) {
             sql.printStackTrace();
+        }
+
+        // clean up and standardize assignees
+        try {
+            // update latest assignees
+            System.out.println("Starting update latest assignees...");
+            CleanUpAndStandardizeAssigneeNames.run();
+            Database.commit();
+        } catch(Exception sql) {
+            sql.printStackTrace();
         } finally {
             try {
                 Database.close();

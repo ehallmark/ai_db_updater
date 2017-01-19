@@ -37,6 +37,12 @@ public class Database {
         }
     }
 
+    public static ResultSet loadAssignees() throws SQLException {
+        PreparedStatement ps = conn.prepareStatement("select distinct on (pub_doc_number) pub_doc_number, assignees from paragraph_tokens order by pub_doc_number");
+        ps.setFetchSize(5);
+        return ps.executeQuery();
+    }
+
     public static void setupLatestAssigneesFromAssignmentRecords() throws Exception {
         // Get all pub_doc_numbers
         PreparedStatement ps = conn.prepareStatement("select distinct pub_doc_number from paragraph_tokens");
