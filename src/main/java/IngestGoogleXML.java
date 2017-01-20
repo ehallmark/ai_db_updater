@@ -14,7 +14,10 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.RecursiveAction;
+import java.util.stream.Collectors;
 
 /**
  * Created by ehallmark on 1/3/17.
@@ -25,7 +28,9 @@ public class IngestGoogleXML {
 
     public static void main(String[] args) {
         try {
-            Database.setupClassificationsHash();
+            Set<String> expiredPatents = UpdateExpiredPatentsSet.load();
+            Map<String,List<String>> patentToAssigneeMap = UpdateAssigneeHash.load();
+            Map<String,Set<String>> patentToClassificationMap = UpdateClassificationHash.load();
             final int numTasks = 24;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);
             // Get last ingested date
@@ -131,7 +136,14 @@ public class IngestGoogleXML {
                                         saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
 
                                         if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
-                                            Database.ingestRecords(handler.getPatentNumber(), handler.getAssignees(), handler.getFullDocuments());
+                                            boolean isExpired = expiredPatents.contains(handler.getPatentNumber());
+                                            Set<String> classData = patentToClassificationMap.get(handler.getPatentNumber());
+                                            Set<String> assigneeData = patentToAssigneeMap.get(handler.getPatentNumber()).stream().collect(Collectors.toSet());
+                                            if(assigneeData==null) {
+                                                // default to original assignee
+                                                assigneeData=handler.getAssignees();
+                                            }
+                                            Database.ingestRecords(handler.getPatentNumber(), assigneeData, classData, isExpired, handler.getFullDocuments());
                                         }
 
                                         lines.clear();
@@ -148,8 +160,16 @@ public class IngestGoogleXML {
                                     saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
 
                                     if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
-                                        Database.ingestRecords(handler.getPatentNumber(), handler.getAssignees(), handler.getFullDocuments());
+                                        boolean isExpired = expiredPatents.contains(handler.getPatentNumber());
+                                        Set<String> classData = patentToClassificationMap.get(handler.getPatentNumber());
+                                        Set<String> assigneeData = patentToAssigneeMap.get(handler.getPatentNumber()).stream().collect(Collectors.toSet());
+                                        if(assigneeData==null) {
+                                            // default to original assignee
+                                            assigneeData=handler.getAssignees();
+                                        }
+                                        Database.ingestRecords(handler.getPatentNumber(), assigneeData, classData, isExpired, handler.getFullDocuments());
                                     }
+
                                     lines.clear();
                                     handler.reset();
                                 }
@@ -194,30 +214,6 @@ public class IngestGoogleXML {
             e.printStackTrace();
         }
 
-        try {
-            // update latest assignees
-            System.out.println("Starting update latest assignees...");
-            Database.setupLatestAssigneesFromAssignmentRecords();
-            Database.commit();
-        } catch(Exception sql) {
-            sql.printStackTrace();
-        }
-
-        // clean up and standardize assignees
-        try {
-            // update latest assignees
-            System.out.println("Starting update latest assignees...");
-            CleanUpAndStandardizeAssigneeNames.run();
-            Database.commit();
-        } catch(Exception sql) {
-            sql.printStackTrace();
-        } finally {
-            try {
-                Database.close();
-            } catch(Exception sql) {
-                sql.printStackTrace();
-            }
-        }
 
     }
 
