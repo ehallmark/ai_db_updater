@@ -84,7 +84,7 @@ public class Database {
                     if(line.length() >= 50) {
                         String patNum = line.substring(0, 7);
                         try {
-                            if (Integer.valueOf(patNum) >= 6000000) {
+                            if (Integer.valueOf(patNum) >= 7000000) {
                                 String maintenanceCode = line.substring(46, 51).trim();
                                 if (patNum != null && maintenanceCode != null && maintenanceCode.equals("EXP.")) {
                                     System.out.println(patNum + " has expired... Updating database now.");
@@ -128,7 +128,7 @@ public class Database {
         final int backYearDataDate = 151231;
         int numFilesForBackYearData = 14;
         List<String> backYearDates = new ArrayList<>(numFilesForBackYearData);
-        for(int i = 1; i <= numFilesForBackYearData; i++) {
+        for(int i = 5; i <= numFilesForBackYearData; i++) {
             backYearDates.add(String.format("%06d", backYearDataDate)+"-"+String.format("%02d", i));
         }
         int lastIngestedDate = 160000;
@@ -265,7 +265,7 @@ public class Database {
                     if(line.length() >= 32) {
                         String patNum = line.substring(10, 17).trim();
                         try {
-                            if(Integer.valueOf(patNum) >= 6000000) {
+                            if(Integer.valueOf(patNum) >= 7000000) {
                                 String cpcSection = line.substring(17, 18);
                                 String cpcClass = cpcSection + line.substring(18, 20);
                                 String cpcSubclass = cpcClass + line.substring(20, 21);

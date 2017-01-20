@@ -89,10 +89,14 @@ public class AssignmentSAXHandler extends DefaultHandler{
                     if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
                         System.out.println("Updating " + patent + " with assignees: " + String.join("; ", currentAssignees));
                         try {
-                            Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
+                            if(Integer.valueOf(patent) >= 7000000) {
+                                Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
+                            }
                         } catch (SQLException sql) {
                             System.out.println("SQL ERROR: ");
                             sql.printStackTrace();
+                        } catch (NumberFormatException nfe) {
+                            // not a utility patent
                         }
                     } else {
                         System.out.println(patent + " does not exist in database");
