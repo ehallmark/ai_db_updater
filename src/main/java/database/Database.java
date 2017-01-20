@@ -229,12 +229,12 @@ public class Database {
                 File xmlFile = new File(ASSIGNEE_DESTINATION_FILE_NAME);
                 if (xmlFile.exists()) xmlFile.delete();
 
-                try {
-                    AssignmentSAXHandler.save();
-                } catch(Exception e) {
-                    System.out.println("Unable to save assignee file...");
-                }
             }
+        }
+        try {
+            AssignmentSAXHandler.save();
+        } catch(Exception e) {
+            System.out.println("Unable to save assignee file...");
         }
     }
 
