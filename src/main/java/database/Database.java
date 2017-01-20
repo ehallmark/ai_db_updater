@@ -23,14 +23,12 @@ import java.util.stream.Collectors;
 public class Database {
     private static final String patentDBUrl = "jdbc:postgresql://localhost/patentdb?user=postgres&password=&tcpKeepAlive=true";
     private static Connection conn;
-    private static Map<String,Set<String>> patentToClassificationHash;
     private static String CPC_ZIP_FILE_NAME = "patent_grant_classifications.zip";
     private static String CPC_DESTINATION_FILE_NAME = "patent_grant_classifications_folder";
     private static String ASSIGNEE_ZIP_FILE_NAME = "patent_grant_assignees.zip";
     private static String ASSIGNEE_DESTINATION_FILE_NAME = "patent_grant_assignees_folder";
     private static String MAINT_ZIP_FILE_NAME = "patent_grant_maint_fees.zip";
     private static String MAINT_DESTINATION_FILE_NAME = "patent_grant_maint_fees_folder";
-    private static Set<String> expiredPatentsSet = new HashSet<>();
     private static File expiredPatentsSetFile = new File("expired_patents_set.jobj");
     private static File patentToClassificationMapFile = new File("patent_to_classification_map.jobj");
 
@@ -43,7 +41,7 @@ public class Database {
         }
     }
 
-    public static void saveExpiredPatentsSet() throws IOException {
+    public static void saveExpiredPatentsSet(Set<String> expiredPatentsSet) throws IOException {
         if(expiredPatentsSet!=null) {
             ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(expiredPatentsSetFile)));
             oos.writeObject(expiredPatentsSet);
@@ -52,7 +50,7 @@ public class Database {
         }
     }
 
-    public static void savePatentToClassificationHash() throws IOException {
+    public static void savePatentToClassificationHash(Map<String,Set<String>> patentToClassificationHash) throws IOException {
         if(patentToClassificationHash!=null) {
             ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(patentToClassificationMapFile)));
             oos.writeObject(patentToClassificationHash);
@@ -70,6 +68,7 @@ public class Database {
     public static void loadAndIngestMaintenanceFeeData() throws Exception {
         // should be one at least every other month
         // Load file from Google
+        Set<String> expiredPatentsSet = new HashSet<>();
         if (!(new File(MAINT_DESTINATION_FILE_NAME).exists())) {
             try {
                 String url = "https://bulkdata.uspto.gov/data2/patent/maintenancefee/MaintFeeEvents.zip";
@@ -116,7 +115,7 @@ public class Database {
             }
         });
 
-        saveExpiredPatentsSet();
+        saveExpiredPatentsSet(expiredPatentsSet);
 
     }
 
@@ -272,8 +271,7 @@ public class Database {
     public static void setupClassificationsHash() throws Exception{
         // should be one at least every other month
         // Load file from Google
-
-        patentToClassificationHash = new HashMap<>();
+        Map<String,Set<String>> patentToClassificationHash = new HashMap<>();
         if (!(new File(CPC_DESTINATION_FILE_NAME).exists())) {
             boolean found = false;
             LocalDate date = LocalDate.now();
@@ -336,7 +334,7 @@ public class Database {
             }
         });
 
-        savePatentToClassificationHash();
+        savePatentToClassificationHash(patentToClassificationHash);
 
     }
 
@@ -349,11 +347,12 @@ public class Database {
         return lastDate;
     }
 
-    public static void ingestRecords(String patentNumber, Set<String> assigneeData, Set<String> classData, boolean isExpired, List<List<String>> documents) throws SQLException {
+    public static void ingestRecords(String patentNumber, Collection<String> assigneeData, Collection<String> classData, boolean isExpired, List<List<String>> documents) throws SQLException {
+        if(patentNumber==null)return;
         PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,assignees,classifications,is_expired,tokens) VALUES (?,?,?,?,?) ON CONFLICT DO NOTHING");
         System.out.println("Ingesting Patent: "+patentNumber+", Assignee(s): "+String.join("; ",assigneeData));
-        final Set<String> cleanAssigneeData = assigneeData==null ? Collections.emptySet() : assigneeData;
-        final Set<String> cleanClassificationData = classData==null ? Collections.emptySet() : classData;
+        final Collection<String> cleanAssigneeData = assigneeData==null ? Collections.emptySet() : assigneeData;
+        final Collection<String> cleanClassificationData = classData==null ? Collections.emptySet() : classData;
         documents.forEach(doc->{
             try {
                 synchronized (ps) {
@@ -364,7 +363,7 @@ public class Database {
                     ps.setArray(5, conn.createArrayOf("varchar", doc.toArray()));
                     ps.executeUpdate();
                 }
-            } catch(SQLException e) {
+            } catch(Exception e) {
                 e.printStackTrace();
             }
         });

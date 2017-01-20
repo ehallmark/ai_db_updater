@@ -12,10 +12,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.RecursiveAction;
 import java.util.stream.Collectors;
 
@@ -141,7 +138,7 @@ public class IngestGoogleXML {
                                         if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
                                             boolean isExpired = expiredPatents.contains(handler.getPatentNumber());
                                             Set<String> classData = patentToClassificationMap.get(handler.getPatentNumber());
-                                            Set<String> assigneeData = patentToAssigneeMap.get(handler.getPatentNumber()).stream().collect(Collectors.toSet());
+                                            Collection<String> assigneeData = patentToAssigneeMap.get(handler.getPatentNumber());
                                             if(assigneeData==null) {
                                                 // default to original assignee
                                                 assigneeData=handler.getAssignees();
@@ -165,7 +162,7 @@ public class IngestGoogleXML {
                                     if (handler.getPatentNumber() != null && !handler.getFullDocuments().isEmpty()) {
                                         boolean isExpired = expiredPatents.contains(handler.getPatentNumber());
                                         Set<String> classData = patentToClassificationMap.get(handler.getPatentNumber());
-                                        Set<String> assigneeData = patentToAssigneeMap.get(handler.getPatentNumber()).stream().collect(Collectors.toSet());
+                                        Collection<String> assigneeData = patentToAssigneeMap.get(handler.getPatentNumber());
                                         if(assigneeData==null) {
                                             // default to original assignee
                                             assigneeData=handler.getAssignees();
