@@ -4,16 +4,12 @@ package main.java.tools;
  * Created by ehallmark on 1/3/17.
  */
 
-import main.java.database.Database;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.*;
-import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.RecursiveAction;
-import java.util.stream.Collectors;
 
 /**
 
@@ -29,7 +25,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private List<String>documentPieces=new ArrayList<>();
     private List<String> currentPatents = new ArrayList<>();
     private List<String> currentAssignees = new ArrayList<>();
-    private RecursiveAction thread;
 
     private static File patentToAssigneeMapFile = new File("patent_to_assignee_map_latest.jobj");
     private static Map<String,List<String>> patentToAssigneeMap;
@@ -68,10 +63,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
         currentAssignees.clear();
         currentPatents.clear();
         documentPieces.clear();
-        if(thread!=null&&!thread.isDone()){
-            thread.join();
-        }
-        thread=null;
     }
 
     public void startElement(String uri,String localName,String qName,
