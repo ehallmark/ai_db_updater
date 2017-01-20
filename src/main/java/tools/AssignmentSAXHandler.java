@@ -111,12 +111,14 @@ public class AssignmentSAXHandler extends DefaultHandler{
             inPatentAssignment=false;
             // done with patent so update patent map and reset data
             if(!shouldTerminate&&!currentAssignees.isEmpty()) {
+                List<String> dupAssignees = new ArrayList<>(currentAssignees.size());
+                dupAssignees.addAll(currentAssignees);
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
                     if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
                         try {
                             if(Integer.valueOf(patent) >= 7000000) {
-                                patentToAssigneeMap.put(patent, currentAssignees);
+                                patentToAssigneeMap.put(patent, dupAssignees);
                             }
                         } catch (NumberFormatException nfe) {
                             // not a utility patent
