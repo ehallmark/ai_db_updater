@@ -11,6 +11,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.RecursiveAction;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +28,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private List<String>documentPieces=new ArrayList<>();
     private List<String> currentPatents = new ArrayList<>();
     private List<String> currentAssignees = new ArrayList<>();
+    private RecursiveAction thread;
 
 
     public void reset() {
@@ -41,6 +43,10 @@ public class AssignmentSAXHandler extends DefaultHandler{
         currentAssignees.clear();
         currentPatents.clear();
         documentPieces.clear();
+        if(thread!=null&&!thread.isDone()){
+            thread.join();
+        }
+        thread=null;
     }
 
     public void startElement(String uri,String localName,String qName,
@@ -90,11 +96,22 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         System.out.println("Updating " + patent + " with assignees: " + String.join("; ", currentAssignees));
                         try {
                             if(Integer.valueOf(patent) >= 7000000) {
-                                Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
+                                if(thread!=null&&!thread.isDone())thread.join();
+                                thread = new RecursiveAction() {
+                                    @Override
+                                    public void compute() {
+                                        try {
+                                            synchronized (Database.class) {
+                                                Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
+                                            }
+                                        } catch(SQLException sql) {
+                                            System.out.println("SQL ERROR: ");
+                                            sql.printStackTrace();
+                                        }
+                                    }
+                                };
+                                thread.fork();
                             }
-                        } catch (SQLException sql) {
-                            System.out.println("SQL ERROR: ");
-                            sql.printStackTrace();
                         } catch (NumberFormatException nfe) {
                             // not a utility patent
                         }
