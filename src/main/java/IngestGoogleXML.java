@@ -29,8 +29,11 @@ public class IngestGoogleXML {
     public static void main(String[] args) {
         try {
             Set<String> expiredPatents = UpdateExpiredPatentsSet.load();
+            if(expiredPatents==null) throw new RuntimeException("No expiredPatents found");
             Map<String,List<String>> patentToAssigneeMap = UpdateAssigneeHash.load();
+            if(patentToAssigneeMap==null) throw new RuntimeException("No patentToAssigneeMap found");
             Map<String,Set<String>> patentToClassificationMap = UpdateClassificationHash.load();
+            if(patentToClassificationMap==null) throw new RuntimeException("No patentToClassificationMap found");
             final int numTasks = 24;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);
             // Get last ingested date
