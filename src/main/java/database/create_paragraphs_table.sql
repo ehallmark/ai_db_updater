@@ -15,6 +15,8 @@ ALTER TABLE paragraph_tokens ADD COLUMN is_expired boolean not null default(FALS
 CREATE INDEX paragraph_tokens_random_idx on paragraph_tokens (randomizer);
 CREATE INDEX paragraph_tokens_pub_doc_number_idx on paragraph_tokens (pub_doc_number);
 
+DELETE FROM paragraph_tokens where pub_doc_number::int < 7000000;
+
 CLUSTER paragraph_tokens USING paragraph_tokens_random_idx;
 
 DROP INDEX paragraph_tokens_random_idx;

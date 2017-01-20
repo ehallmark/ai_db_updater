@@ -50,7 +50,6 @@ public class SAXHandler extends DefaultHandler{
         shouldTerminate = false;
         fullDocuments.clear();
         documentPieces.clear();
-        shouldTerminate=false;
         assignees.clear();
         pubDocNumber=null;
     }

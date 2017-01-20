@@ -139,7 +139,7 @@ public class IngestGoogleXML {
                                             boolean isExpired = expiredPatents.contains(handler.getPatentNumber());
                                             Set<String> classData = patentToClassificationMap.get(handler.getPatentNumber());
                                             Collection<String> assigneeData = patentToAssigneeMap.get(handler.getPatentNumber());
-                                            if(assigneeData==null) {
+                                            if(assigneeData==null||assigneeData.isEmpty()) {
                                                 // default to original assignee
                                                 assigneeData=handler.getAssignees();
                                             }
