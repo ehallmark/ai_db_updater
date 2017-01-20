@@ -30,6 +30,8 @@ public class Database {
     private static String ASSIGNEE_DESTINATION_FILE_NAME = "patent_grant_assignees_folder";
     private static String MAINT_ZIP_FILE_NAME = "patent_grant_maint_fees_folder";
     private static String MAINT_DESTINATION_FILE_NAME = "patent_grant_maint_fees_folder";
+    private static Set<String> expiredPatentsSet = new HashSet<>();
+    private static File expiredPatentsSetFile = new File("expired_patents_set.jobj");
 
     static {
         try {
@@ -37,6 +39,15 @@ public class Database {
             conn.setAutoCommit(false);
         } catch(Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void saveExpiredPatentsSet() throws IOException {
+        if(expiredPatentsSet!=null) {
+            ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(expiredPatentsSetFile)));
+            oos.writeObject(expiredPatentsSet);
+            oos.flush();
+            oos.close();
         }
     }
 
@@ -50,28 +61,21 @@ public class Database {
         // should be one at least every other month
         // Load file from Google
         if(! (new File(MAINT_DESTINATION_FILE_NAME).exists())) {
-            boolean found = false;
-            LocalDate date = LocalDate.now();
-            while (!found) {
-                try {
-                    String dateStr = String.format("%04d", date.getYear()) + "-" + String.format("%02d", date.getMonthValue()) + "-" + String.format("%02d", date.getDayOfMonth());
-                    String url = "http://patents.reedtech.com/downloads/PatentClassInfo/MAINTENANCEFEEES" + dateStr + ".zip";
-                    URL website = new URL(url);
-                    System.out.println("Trying: " + website.toString());
-                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                    FileOutputStream fos = new FileOutputStream(MAINT_ZIP_FILE_NAME);
-                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                    fos.close();
+            try {
+                String url = "https://bulkdata.uspto.gov/data2/patent/maintenancefee/MaintFeeEvents.zip";
+                URL website = new URL(url);
+                System.out.println("Trying: " + website.toString());
+                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                FileOutputStream fos = new FileOutputStream(MAINT_ZIP_FILE_NAME);
+                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                fos.close();
 
-                    ZipFile zipFile = new ZipFile(MAINT_ZIP_FILE_NAME);
-                    zipFile.extractAll(MAINT_DESTINATION_FILE_NAME);
+                ZipFile zipFile = new ZipFile(MAINT_ZIP_FILE_NAME);
+                zipFile.extractAll(MAINT_DESTINATION_FILE_NAME);
 
-                    found = true;
-                } catch (Exception e) {
-                    //e.printStackTrace();
-                    System.out.println("Not found");
-                }
-                date = date.minusDays(1);
+            } catch (Exception e) {
+                //e.printStackTrace();
+                System.out.println("Not found");
             }
         }
 
@@ -88,7 +92,8 @@ public class Database {
                                 String maintenanceCode = line.substring(46, 51).trim();
                                 if (patNum != null && maintenanceCode != null && maintenanceCode.equals("EXP.")) {
                                     System.out.println(patNum + " has expired... Updating database now.");
-                                    updateIsExpiredForPatent(patNum, true);
+                                    expiredPatentsSet.add(patNum);
+                                    //updateIsExpiredForPatent(patNum, true);
                                 }
                             }
                         } catch (NumberFormatException nfe) {
@@ -102,6 +107,8 @@ public class Database {
                 e.printStackTrace();
             }
         });
+
+        saveExpiredPatentsSet();
     }
 
     public static Set<String> loadAllPatents() throws SQLException {
