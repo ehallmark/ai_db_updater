@@ -9,6 +9,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.RecursiveAction;
@@ -30,6 +31,30 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private List<String> currentAssignees = new ArrayList<>();
     private RecursiveAction thread;
 
+    private static File patentToAssigneeMapFile = new File("patent_to_assignee_map_latest.jobj");
+    private static Map<String,List<String>> patentToAssigneeMap;
+
+    static {
+        try {
+            if (patentToAssigneeMapFile.exists()) {
+                ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(patentToAssigneeMapFile)));
+                patentToAssigneeMap = (Map<String,List<String>>)ois.readObject();
+                ois.close();
+            } else {
+                patentToAssigneeMap=new HashMap<>();
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void save() throws IOException {
+        if(patentToAssigneeMap==null) return;
+        ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(patentToAssigneeMapFile)));
+        oos.writeObject(patentToAssigneeMap);
+        oos.flush();
+        oos.close();
+    }
 
     public void reset() {
         // DO NOT CLEAR PATENT TO ASSIGNEE MAP!!!!
@@ -95,22 +120,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
                     if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
                         try {
                             if(Integer.valueOf(patent) >= 7000000) {
-                                if(thread!=null&&!thread.isDone())thread.join();
-                                thread = new RecursiveAction() {
-                                    @Override
-                                    public void compute() {
-                                        try {
-                                            System.out.println("Updating " + patent + " with assignees: " + String.join("; ", currentAssignees));
-                                            synchronized (Database.class) {
-                                                Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
-                                            }
-                                        } catch(SQLException sql) {
-                                            System.out.println("SQL ERROR: ");
-                                            sql.printStackTrace();
-                                        }
-                                    }
-                                };
-                                thread.fork();
+                                patentToAssigneeMap.put(patent, currentAssignees);
                             }
                         } catch (NumberFormatException nfe) {
                             // not a utility patent

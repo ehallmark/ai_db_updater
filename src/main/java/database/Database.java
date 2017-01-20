@@ -192,7 +192,7 @@ public class Database {
                         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
                             AssignmentSAXHandler handler = new AssignmentSAXHandler();
                             saxParser.parse(bis, handler);
-                            Database.commit();
+                            //Database.commit();
                         } catch(Exception e) {
                             System.out.println("Error ingesting file: "+file.getName());
                             e.printStackTrace();
@@ -213,6 +213,12 @@ public class Database {
 
                 File xmlFile = new File(ASSIGNEE_DESTINATION_FILE_NAME);
                 if (xmlFile.exists()) xmlFile.delete();
+
+                try {
+                    AssignmentSAXHandler.save();
+                } catch(Exception e) {
+                    System.out.println("Unable to save assignee file...");
+                }
             }
         }
     }
