@@ -28,7 +28,7 @@ public class Database {
     private static String CPC_DESTINATION_FILE_NAME = "patent_grant_classifications_folder";
     private static String ASSIGNEE_ZIP_FILE_NAME = "patent_grant_assignees.zip";
     private static String ASSIGNEE_DESTINATION_FILE_NAME = "patent_grant_assignees_folder";
-    private static String MAINT_ZIP_FILE_NAME = "patent_grant_maint_fees_folder";
+    private static String MAINT_ZIP_FILE_NAME = "patent_grant_maint_fees.zip";
     private static String MAINT_DESTINATION_FILE_NAME = "patent_grant_maint_fees_folder";
     private static Set<String> expiredPatentsSet = new HashSet<>();
     private static File expiredPatentsSetFile = new File("expired_patents_set.jobj");
