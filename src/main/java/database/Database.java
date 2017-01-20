@@ -125,13 +125,17 @@ public class Database {
         String endDateStr = String.valueOf(date.getYear()).substring(2, 4) + String.format("%02d", date.getMonthValue()) + String.format("%02d", date.getDayOfMonth());
         Integer endDateInt = Integer.valueOf(endDateStr);
 
+        // INITIAL OPTIONS TO SET
         final int backYearDataDate = 151231;
-        int numFilesForBackYearData = 14;
+        final int numFilesForBackYearData = 14;
+        final int backYearDataStartNum = 1;
+        final int startDateNum = 160000;
+
         List<String> backYearDates = new ArrayList<>(numFilesForBackYearData);
-        for(int i = 5; i <= numFilesForBackYearData; i++) {
+        for(int i = backYearDataStartNum; i < backYearDataStartNum + numFilesForBackYearData; i++) {
             backYearDates.add(String.format("%06d", backYearDataDate)+"-"+String.format("%02d", i));
         }
-        int lastIngestedDate = 160000;
+        int lastIngestedDate = startDateNum;
         System.out.println("Starting with date: " + lastIngestedDate);
         System.out.println("Ending with date: " + endDateInt);
         String base_url = "https://bulkdata.uspto.gov/data2/patent/assignment/ad20";

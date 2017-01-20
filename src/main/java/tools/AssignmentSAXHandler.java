@@ -93,7 +93,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
                     if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
-                        System.out.println("Updating " + patent + " with assignees: " + String.join("; ", currentAssignees));
                         try {
                             if(Integer.valueOf(patent) >= 7000000) {
                                 if(thread!=null&&!thread.isDone())thread.join();
@@ -101,6 +100,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
                                     @Override
                                     public void compute() {
                                         try {
+                                            System.out.println("Updating " + patent + " with assignees: " + String.join("; ", currentAssignees));
                                             synchronized (Database.class) {
                                                 Database.updateAssigneeForPatent(patent, currentAssignees.toArray(new String[currentAssignees.size()]));
                                             }
