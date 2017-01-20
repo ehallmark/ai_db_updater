@@ -32,6 +32,7 @@ public class Database {
     private static String MAINT_DESTINATION_FILE_NAME = "patent_grant_maint_fees_folder";
     private static Set<String> expiredPatentsSet = new HashSet<>();
     private static File expiredPatentsSetFile = new File("expired_patents_set.jobj");
+    private static File patentToClassificationMapFile = new File("patent_to_classification_map.jobj");
 
     static {
         try {
@@ -46,6 +47,15 @@ public class Database {
         if(expiredPatentsSet!=null) {
             ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(expiredPatentsSetFile)));
             oos.writeObject(expiredPatentsSet);
+            oos.flush();
+            oos.close();
+        }
+    }
+
+    public static void savePatentToClassificationHash() throws IOException {
+        if(patentToClassificationHash!=null) {
+            ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(patentToClassificationMapFile)));
+            oos.writeObject(patentToClassificationHash);
             oos.flush();
             oos.close();
         }
@@ -230,6 +240,14 @@ public class Database {
         }
     }
 
+    public static Map<String,Set<String>> loadPatentToClassificationMap() throws IOException,ClassNotFoundException {
+        Map<String,Set<String>> map;
+        ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(patentToClassificationMapFile)));
+        map = (Map<String,Set<String>>)ois.readObject();
+        ois.close();
+        return map;
+    }
+
     public static void updateAssigneeForPatent(String patent, String[] latestAssignees) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("update paragraph_tokens set assignees=? where pub_doc_number=?");
         ps.setArray(1, conn.createArrayOf("varchar",latestAssignees));
@@ -247,75 +265,75 @@ public class Database {
     public static void setupClassificationsHash() throws Exception{
         // should be one at least every other month
         // Load file from Google
-        patentToClassificationHash = new HashMap<>();
-        if(! (new File(CPC_DESTINATION_FILE_NAME).exists())) {
-            boolean found = false;
-            LocalDate date = LocalDate.now();
-            while (!found) {
-                try {
-                    String dateStr = String.format("%04d", date.getYear()) + "-" + String.format("%02d", date.getMonthValue()) + "-" + String.format("%02d", date.getDayOfMonth());
-                    String url = "http://patents.reedtech.com/downloads/PatentClassInfo/ClassData/US_Grant_CPC_MCF_Text_" + dateStr + ".zip";
-                    URL website = new URL(url);
-                    System.out.println("Trying: " + website.toString());
-                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                    FileOutputStream fos = new FileOutputStream(CPC_ZIP_FILE_NAME);
-                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                    fos.close();
+        if(patentToClassificationMapFile.exists()) {
+            patentToClassificationHash=loadPatentToClassificationMap();
+        } else {
+            patentToClassificationHash = new HashMap<>();
+            if (!(new File(CPC_DESTINATION_FILE_NAME).exists())) {
+                boolean found = false;
+                LocalDate date = LocalDate.now();
+                while (!found) {
+                    try {
+                        String dateStr = String.format("%04d", date.getYear()) + "-" + String.format("%02d", date.getMonthValue()) + "-" + String.format("%02d", date.getDayOfMonth());
+                        String url = "http://patents.reedtech.com/downloads/PatentClassInfo/ClassData/US_Grant_CPC_MCF_Text_" + dateStr + ".zip";
+                        URL website = new URL(url);
+                        System.out.println("Trying: " + website.toString());
+                        ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                        FileOutputStream fos = new FileOutputStream(CPC_ZIP_FILE_NAME);
+                        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                        fos.close();
 
-                    ZipFile zipFile = new ZipFile(CPC_ZIP_FILE_NAME);
-                    zipFile.extractAll(CPC_DESTINATION_FILE_NAME);
+                        ZipFile zipFile = new ZipFile(CPC_ZIP_FILE_NAME);
+                        zipFile.extractAll(CPC_DESTINATION_FILE_NAME);
 
-                    found = true;
-                } catch (Exception e) {
-                    //e.printStackTrace();
-                    System.out.println("Not found");
+                        found = true;
+                    } catch (Exception e) {
+                        //e.printStackTrace();
+                        System.out.println("Not found");
+                    }
+                    date = date.minusDays(1);
                 }
-                date = date.minusDays(1);
             }
-        }
 
 
-        Arrays.stream(new File(CPC_DESTINATION_FILE_NAME).listFiles(File::isDirectory)[0].listFiles()).forEach(file->{
-            try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                String line = reader.readLine();
-                while(line!=null) {
-                    if(line.length() >= 32) {
-                        String patNum = line.substring(10, 17).trim();
-                        try {
-                            if(Integer.valueOf(patNum) >= 7000000) {
-                                String cpcSection = line.substring(17, 18);
-                                String cpcClass = cpcSection + line.substring(18, 20);
-                                String cpcSubclass = cpcClass + line.substring(20, 21);
-                                String cpcMainGroup = cpcSubclass + line.substring(21, 25);
-                                String cpcSubGroup = cpcMainGroup + line.substring(26, 32);
-                                List<String> dataList = Arrays.asList(
-                                        cpcSection,
-                                        cpcClass,
-                                        cpcSubclass,
-                                        cpcMainGroup,
-                                        cpcSubGroup
-                                );
-                                System.out.println("Data for " + patNum + ": " + String.join(", ", dataList));
-                                if(patentToClassificationHash!=null) {
-                                    Set<String> data = dataList.stream().collect(Collectors.toSet());
-                                    if (patentToClassificationHash.containsKey(patNum)) {
-                                        patentToClassificationHash.get(patNum).addAll(data);
-                                    } else {
-                                        patentToClassificationHash.put(patNum, data);
+            Arrays.stream(new File(CPC_DESTINATION_FILE_NAME).listFiles(File::isDirectory)[0].listFiles()).forEach(file -> {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    String line = reader.readLine();
+                    while (line != null) {
+                        if (line.length() >= 32) {
+                            String patNum = line.substring(10, 17).trim();
+                            try {
+                                if (Integer.valueOf(patNum) >= 7000000) {
+                                    String cpcSection = line.substring(17, 18);
+                                    String cpcClass = cpcSection + line.substring(18, 20);
+                                    String cpcSubclass = cpcClass + line.substring(20, 21);
+                                    String cpcMainGroup = cpcSubclass + line.substring(21, 25);
+                                    String cpcSubGroup = cpcMainGroup + line.substring(26, 32);
+                                    System.out.println("Data for " + patNum + ": " + String.join(", ", cpcSubGroup));
+                                    if (patentToClassificationHash != null) {
+                                        if (patentToClassificationHash.containsKey(patNum)) {
+                                            patentToClassificationHash.get(patNum).add(cpcSubGroup);
+                                        } else {
+                                            Set<String> data = new HashSet<>();
+                                            data.add(cpcSubGroup);
+                                            patentToClassificationHash.put(patNum, data);
+                                        }
                                     }
                                 }
+                            } catch (NumberFormatException nfe) {
+                                // not a utility patent
+                                // skip...
                             }
-                        } catch(NumberFormatException nfe) {
-                            // not a utility patent
-                            // skip...
                         }
+                        line = reader.readLine();
                     }
-                    line = reader.readLine();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
-        });
+            });
+
+            savePatentToClassificationHash();
+        }
 
     }
 

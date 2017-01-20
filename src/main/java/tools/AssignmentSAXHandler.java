@@ -43,6 +43,10 @@ public class AssignmentSAXHandler extends DefaultHandler{
         }
     }
 
+    public static Map<String,List<String>> load() throws IOException {
+        return patentToAssigneeMap;
+    }
+
     public static void save() throws IOException {
         if(patentToAssigneeMap==null) return;
         ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(patentToAssigneeMapFile)));
