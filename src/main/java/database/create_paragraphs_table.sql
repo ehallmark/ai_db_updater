@@ -9,6 +9,7 @@ CREATE TABLE paragraph_tokens (
     tokens text[] not null,
     randomizer double precision not null default(random())
 );
+ALTER TABLE paragraph_tokens ADD COLUMN is_expired boolean not null default(FALSE);
 
 -- TO RANDOMIZE ORDER OF DATA PHYSICALLY ON THE DISK
 CREATE INDEX paragraph_tokens_random_idx on paragraph_tokens (randomizer);
@@ -18,6 +19,5 @@ CLUSTER paragraph_tokens USING paragraph_tokens_random_idx;
 
 DROP INDEX paragraph_tokens_random_idx;
 
-ALTER TABLE paragraph_tokens ADD COLUMN is_expired boolean not null default(FALSE);
 
 pg_dump -Fc -d paragraph_tokens > paragraph_tokens.dump

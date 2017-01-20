@@ -32,9 +32,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
     static {
         try {
             if (patentToAssigneeMapFile.exists()) {
-                ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(patentToAssigneeMapFile)));
-                patentToAssigneeMap = (Map<String,List<String>>)ois.readObject();
-                ois.close();
+                patentToAssigneeMap=load();
             } else {
                 patentToAssigneeMap=new HashMap<>();
             }
@@ -43,7 +41,10 @@ public class AssignmentSAXHandler extends DefaultHandler{
         }
     }
 
-    public static Map<String,List<String>> load() throws IOException {
+    public static Map<String,List<String>> load() throws IOException, ClassNotFoundException {
+        ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(patentToAssigneeMapFile)));
+        Map<String,List<String>> patentToAssigneeMap = (Map<String,List<String>>)ois.readObject();
+        ois.close();
         return patentToAssigneeMap;
     }
 
