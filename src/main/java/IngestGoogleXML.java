@@ -31,7 +31,7 @@ public class IngestGoogleXML {
             if(patentToAssigneeMap==null) throw new RuntimeException("No patentToAssigneeMap found");
             Map<String,Set<String>> patentToClassificationMap = UpdateClassificationHash.load();
             if(patentToClassificationMap==null) throw new RuntimeException("No patentToClassificationMap found");
-            final int numTasks = 24;
+            final int numTasks = 50;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);
             // Get last ingested date
             Integer lastIngestedDate = Database.lastIngestedDate();
