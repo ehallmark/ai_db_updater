@@ -133,8 +133,11 @@ public class AssignmentSAXHandler extends DefaultHandler{
 
         if(inPatentAssignment&&qName.equals("conveyance-text")){
             isConveyanceText=false;
-            String text = cleanAssignee(String.join("",documentPieces));
-            if(text==null||text.length()==0||!text.startsWith("ASSIGNMENT OF ASSIGNOR")) {
+            String text = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
+            boolean changeOfNameOrAssignorsInterest = false;
+            if(text.startsWith("ASSIGNMENT OF ASSIGN")) changeOfNameOrAssignorsInterest=true;
+            if(text.startsWith("CHANGE OF NAME")) changeOfNameOrAssignorsInterest=true;
+            if(text==null||text.length()==0||!changeOfNameOrAssignorsInterest) {
                 shouldTerminate = true;
             }
             documentPieces.clear();
@@ -146,7 +149,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
 
         if(inDocumentID&&qName.equals("doc-number")) {
             isDocNumber = false;
-            String text = cleanAssignee(String.join("",documentPieces));
+            String text = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
             currentPatents.add(text);
             documentPieces.clear();
 
@@ -158,7 +161,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
 
         if(inPatentAssignee&&qName.equals("name")) {
             isName=false;
-            String text = cleanAssignee(String.join("",documentPieces));
+            String text = AssigneeTrimmer.standardizedAssignee(String.join("",documentPieces));
             if(text!=null&&text.length()>0) {
                 currentAssignees.add(text);
             }
@@ -179,13 +182,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
             documentPieces.add(new String(ch,start,length));
         }
 
-    }
-
-    public static String cleanAssignee(String toExtract) {
-        String data = toExtract.toUpperCase().replaceAll("[^A-Z0-9 ]","");
-        while(data.contains("   ")) data=data.replaceAll("   "," "); // strip triple spaces (might be faster)
-        while(data.contains("  ")) data=data.replaceAll("  "," "); // strip double spaces
-        return data.trim();
     }
 
 }
