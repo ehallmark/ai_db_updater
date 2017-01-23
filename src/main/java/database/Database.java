@@ -259,8 +259,6 @@ public class Database {
             while(tasks.size()>numTasks) {
                 tasks.remove(0).join();
             }
-            Database.commit();
-
         }
 
         while(!tasks.isEmpty()) {
