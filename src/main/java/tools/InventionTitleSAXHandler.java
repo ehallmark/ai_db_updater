@@ -82,7 +82,7 @@ public class InventionTitleSAXHandler extends DefaultHandler{
             isDocNumber=true;
         }
 
-        if(qName.equalsIgnoreCase("invention-title")&&inPublicationReference){
+        if(qName.equalsIgnoreCase("invention-title")){
             isInventionTitle=true;
         }
 
@@ -112,7 +112,7 @@ public class InventionTitleSAXHandler extends DefaultHandler{
             documentPieces.clear();
         }
 
-        if(qName.equalsIgnoreCase("invention-title")&&inPublicationReference){
+        if(qName.equalsIgnoreCase("invention-title")){
             isInventionTitle=false;
             inventionTitle=String.join("",documentPieces).trim().toUpperCase().replaceAll("[^A-Z0-9 ]","");
 
