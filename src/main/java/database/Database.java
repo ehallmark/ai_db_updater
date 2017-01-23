@@ -137,6 +137,8 @@ public class Database {
                                 ZipHelper.unzip(bis, bos);
                                 bis.close();
                                 bos.close();
+
+                                System.out.println("FOUND GOOGLE FILE!");
                             } catch (Exception e) {
                                 System.out.println("Unable to unzip google file");
                             }
@@ -162,6 +164,8 @@ public class Database {
                                 ZipHelper.unzip(bis, bos);
                                 bis.close();
                                 bos.close();
+                                System.out.println("FOUND OTHER FILE!");
+
                             } catch (Exception e2) {
                                 System.out.println("Unable to unzip file");
                                 return;

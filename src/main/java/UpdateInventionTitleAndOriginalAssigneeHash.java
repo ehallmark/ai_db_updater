@@ -24,7 +24,7 @@ public class UpdateInventionTitleAndOriginalAssigneeHash {
         try {
             // update latest assignees
             System.out.println("Starting to pull latest invention title data from uspto...");
-            int numThreads = 100;
+            int numThreads = 60;
             Database.loadAndIngestInventionTitleAndOriginalAssigneeData(numThreads);
 
         } catch(Exception sql) {
