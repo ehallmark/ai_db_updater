@@ -48,7 +48,7 @@ public class ConstructAssigneeToPatentsMap {
             });
         });
 
-        System.out.println("Starting to load latest assignee map...");
+        System.out.println("Starting to load original assignee map...");
         Map<String,List<String>> originalAssigneeMap = UpdateInventionTitleAndOriginalAssigneeHash.loadOriginalAssigneeMap();
         if(originalAssigneeMap==null) throw new RuntimeException("Original Assignee Map is null");
 
@@ -71,5 +71,7 @@ public class ConstructAssigneeToPatentsMap {
         System.out.println("Starting to save results...");
         // save
         saveAssigneeToPatentsHash(assigneeToPatentsMap);
+
+        System.out.println("Num assignees: "+assigneeToPatentsMap.size());
     }
 }
