@@ -36,6 +36,7 @@ public class Database {
     private static File expiredPatentsSetFile = new File("expired_patents_set.jobj");
     private static File patentToClassificationMapFile = new File("patent_to_classification_map.jobj");
     public static File patentToInventionTitleMapFile = new File("patent_to_invention_title_map.jobj");
+    public static File patentToOriginalAssigneeMapFile = new File("patent_to_original_assignee_map.jobj");
 
     static {
         try {
@@ -73,14 +74,24 @@ public class Database {
         }
     }
 
+    public static void savePatentToOriginalAssigneeHash(Map<String,List<String>> patentToOriginalAssigneeMap) throws IOException {
+        if(patentToOriginalAssigneeMap!=null) {
+            ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(patentToOriginalAssigneeMapFile)));
+            oos.writeObject(patentToOriginalAssigneeMap);
+            oos.flush();
+            oos.close();
+        }
+    }
+
     public static ResultSet loadPatentNumbersWithAssignees() throws SQLException {
         PreparedStatement ps = conn.prepareStatement("select distinct on (pub_doc_number) pub_doc_number, assignees from paragraph_tokens order by pub_doc_number");
         ps.setFetchSize(5);
         return ps.executeQuery();
     }
 
-    public static void loadAndIngestInventionTitleData(int numTasks) throws Exception {
+    public static void loadAndIngestInventionTitleAndOriginalAssigneeData(int numTasks) throws Exception {
         Map<String,String> patentToInventionTitleMap = Collections.synchronizedMap(new HashMap<>());
+        Map<String,List<String>> patentToOriginalAssigneeMap = Collections.synchronizedMap(new HashMap<>());
         List<RecursiveAction> tasks = new ArrayList<>();
         Integer lastIngestedDate = 70000;
         LocalDate date = LocalDate.now();
@@ -187,6 +198,7 @@ public class Database {
                                             if (patNum != null&&handler.getInventionTitle()!=null) {
                                                 System.out.println(patNum + " has title: "+handler.getInventionTitle());
                                                 patentToInventionTitleMap.put(handler.getPatentNumber(),handler.getInventionTitle());
+                                                patentToOriginalAssigneeMap.put(handler.getPatentNumber(),handler.getOriginalAssignees());
                                             }
                                         }
                                     } catch (Exception nfe) {
@@ -213,6 +225,7 @@ public class Database {
                                         if (patNum != null&&handler.getInventionTitle()!=null) {
                                             System.out.println(patNum + " has title: "+handler.getInventionTitle());
                                             patentToInventionTitleMap.put(handler.getPatentNumber(),handler.getInventionTitle());
+                                            patentToOriginalAssigneeMap.put(handler.getPatentNumber(),handler.getOriginalAssignees());
                                         }
                                     }
                                 } catch (Exception nfe) {
@@ -255,6 +268,7 @@ public class Database {
         }
 
         savePatentToInventionTitleHash(patentToInventionTitleMap);
+        savePatentToOriginalAssigneeHash(patentToOriginalAssigneeMap);
     }
 
     public static void loadAndIngestMaintenanceFeeData() throws Exception {

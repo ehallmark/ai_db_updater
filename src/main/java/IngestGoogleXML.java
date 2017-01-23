@@ -10,11 +10,9 @@ import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.RecursiveAction;
-import java.util.stream.Collectors;
 
 /**
  * Created by ehallmark on 1/3/17.
@@ -27,7 +25,7 @@ public class IngestGoogleXML {
         try {
             Set<String> expiredPatents = UpdateExpiredPatentsSet.load();
             if(expiredPatents==null) throw new RuntimeException("No expiredPatents found");
-            Map<String,List<String>> patentToAssigneeMap = UpdateAssigneeHash.load();
+            Map<String,List<String>> patentToAssigneeMap = UpdateLatestAssigneeHash.load();
             if(patentToAssigneeMap==null) throw new RuntimeException("No patentToAssigneeMap found");
             Map<String,Set<String>> patentToClassificationMap = UpdateClassificationHash.load();
             if(patentToClassificationMap==null) throw new RuntimeException("No patentToClassificationMap found");

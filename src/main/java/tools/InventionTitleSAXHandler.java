@@ -24,15 +24,26 @@ public class InventionTitleSAXHandler extends DefaultHandler{
     boolean isDocNumber=false;
     boolean isInventionTitle=false;
     boolean shouldTerminate = false;
+    boolean inAssignee=false;
+    boolean isOrgname = false;
     String pubDocNumber;
     String inventionTitle;
     List<String> documentPieces = new ArrayList<>();
+    private List<String> originalAssignees = new ArrayList<>();
 
-    public static Map<String,String> load() throws IOException, ClassNotFoundException {
+
+    public static Map<String,String> loadInventionTitleMap() throws IOException, ClassNotFoundException {
         ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(Database.patentToInventionTitleMapFile)));
-        Map<String,String> patentToAssigneeMap = (Map<String,String>)ois.readObject();
+        Map<String,String> patentToInventionTitleMap = (Map<String,String>)ois.readObject();
         ois.close();
-        return patentToAssigneeMap;
+        return patentToInventionTitleMap;
+    }
+
+    public static Map<String,List<String>> loadOriginalAssigneeMap() throws IOException, ClassNotFoundException {
+        ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(Database.patentToOriginalAssigneeMapFile)));
+        Map<String,List<String>> patentToOriginalAssigneeMap = (Map<String,List<String>>)ois.readObject();
+        ois.close();
+        return patentToOriginalAssigneeMap;
     }
 
     public String getPatentNumber() {
@@ -43,14 +54,19 @@ public class InventionTitleSAXHandler extends DefaultHandler{
         return inventionTitle;
     }
 
+    public List<String> getOriginalAssignees() { return originalAssignees; }
+
     public void reset() {
         isInventionTitle=false;
         inPublicationReference=false;
         isDocNumber=false;
+        inAssignee=false;
+        isOrgname=false;
         shouldTerminate = false;
         inventionTitle=null;
         pubDocNumber=null;
         documentPieces.clear();
+        originalAssignees.clear();
     }
 
     public void startElement(String uri,String localName,String qName,
@@ -68,6 +84,14 @@ public class InventionTitleSAXHandler extends DefaultHandler{
 
         if(qName.equalsIgnoreCase("invention-title")&&inPublicationReference){
             isInventionTitle=true;
+        }
+
+        if(qName.toLowerCase().endsWith("assignee")) {
+            inAssignee=true;
+        }
+
+        if(inAssignee&&qName.equalsIgnoreCase("orgname")) {
+            isOrgname=true;
         }
     }
 
@@ -103,6 +127,19 @@ public class InventionTitleSAXHandler extends DefaultHandler{
             inPublicationReference=false;
         }
 
+        if(inAssignee&&qName.equalsIgnoreCase("orgname")) {
+            isOrgname=false;
+            String assignee = AssigneeTrimmer.standardizedAssignee(String.join(" ",documentPieces));
+            if(assignee.length()>0) {
+                originalAssignees.add(assignee);
+            }
+            documentPieces.clear();
+        }
+
+        if(qName.toLowerCase().endsWith("assignee")) {
+            inAssignee=false;
+        }
+
     }
 
     public void characters(char ch[],int start,int length)throws SAXException{
@@ -113,7 +150,7 @@ public class InventionTitleSAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if((!shouldTerminate)&&(isInventionTitle||isDocNumber)){
+        if((!shouldTerminate)&&(isInventionTitle||isDocNumber||isOrgname)){
             documentPieces.add(new String(ch,start,length));
         }
 

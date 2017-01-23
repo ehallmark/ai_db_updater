@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Created by ehallmark on 1/19/17.
  */
-public class UpdateAssigneeHash {
+public class UpdateLatestAssigneeHash {
     public static Map<String,List<String>> load() throws IOException,ClassNotFoundException {
         return AssignmentSAXHandler.load();
     }
