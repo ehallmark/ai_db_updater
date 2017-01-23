@@ -28,12 +28,12 @@ public class ConstructAssigneeToPatentsMap {
 
     public static void main(String[] args) throws Exception {
         // first load original assignee map and latest assignee map
+        System.out.println("Starting to load latest assignee map...");
         Map<String,List<String>> latestAssigneeMap = UpdateLatestAssigneeHash.load();
-        Map<String,List<String>> originalAssigneeMap = UpdateInventionTitleAndOriginalAssigneeHash.loadOriginalAssigneeMap();
 
         if(latestAssigneeMap==null) throw new RuntimeException("Latest Assignee Map is null");
-        if(originalAssigneeMap==null) throw new RuntimeException("Original Assignee Map is null");
 
+        System.out.println("Starting to read through latest assignee map...");
         // then merge all into this map
         Map<String,Set<String>> assigneeToPatentsMap = new HashMap<>();
         latestAssigneeMap.forEach((patent,assignees)->{
@@ -47,6 +47,12 @@ public class ConstructAssigneeToPatentsMap {
                }
             });
         });
+
+        System.out.println("Starting to load latest assignee map...");
+        Map<String,List<String>> originalAssigneeMap = UpdateInventionTitleAndOriginalAssigneeHash.loadOriginalAssigneeMap();
+        if(originalAssigneeMap==null) throw new RuntimeException("Original Assignee Map is null");
+
+        System.out.println("Starting to read through original assignee map...");
         originalAssigneeMap.forEach((patent,assignees)->{
             // skip if latestAssigneeMap has the patent
             if(!latestAssigneeMap.containsKey(patent)) {
@@ -61,6 +67,8 @@ public class ConstructAssigneeToPatentsMap {
                 });
             }
         });
+
+        System.out.println("Starting to save results...");
         // save
         saveAssigneeToPatentsHash(assigneeToPatentsMap);
     }
