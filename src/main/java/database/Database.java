@@ -200,9 +200,13 @@ public class Database {
                                     try {
                                         if (Integer.valueOf(patNum) >= 7000000) {
                                             if (patNum != null&&handler.getInventionTitle()!=null) {
-                                                System.out.println(patNum + " has title: "+handler.getInventionTitle());
-                                                patentToInventionTitleMap.put(handler.getPatentNumber(),handler.getInventionTitle());
-                                                patentToOriginalAssigneeMap.put(handler.getPatentNumber(),handler.getOriginalAssignees());
+                                                System.out.println(patNum + " has title: " + handler.getInventionTitle());
+                                                patentToInventionTitleMap.put(handler.getPatentNumber(), handler.getInventionTitle());
+                                            }
+                                            if(patNum!=null && !handler.getOriginalAssignees().isEmpty()) {
+                                                List<String> cloneAssignees = new ArrayList<>(handler.getOriginalAssignees().size());
+                                                cloneAssignees.addAll(handler.getOriginalAssignees());
+                                                patentToOriginalAssigneeMap.put(handler.getPatentNumber(),cloneAssignees);
                                             }
                                         }
                                     } catch (Exception nfe) {
@@ -227,9 +231,13 @@ public class Database {
                                 try {
                                     if (Integer.valueOf(patNum) >= 7000000) {
                                         if (patNum != null&&handler.getInventionTitle()!=null) {
-                                            System.out.println(patNum + " has title: "+handler.getInventionTitle());
-                                            patentToInventionTitleMap.put(handler.getPatentNumber(),handler.getInventionTitle());
-                                            patentToOriginalAssigneeMap.put(handler.getPatentNumber(),handler.getOriginalAssignees());
+                                            System.out.println(patNum + " has title: " + handler.getInventionTitle());
+                                            patentToInventionTitleMap.put(handler.getPatentNumber(), handler.getInventionTitle());
+                                        }
+                                        if(patNum!=null && !handler.getOriginalAssignees().isEmpty()) {
+                                            List<String> cloneAssignees = new ArrayList<>(handler.getOriginalAssignees().size());
+                                            cloneAssignees.addAll(handler.getOriginalAssignees());
+                                            patentToOriginalAssigneeMap.put(handler.getPatentNumber(),cloneAssignees);
                                         }
                                     }
                                 } catch (Exception nfe) {
