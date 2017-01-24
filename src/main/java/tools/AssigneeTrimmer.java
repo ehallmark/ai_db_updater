@@ -92,9 +92,7 @@ public class AssigneeTrimmer {
     public static String standardizedAssignee(String assignee) {
         if(assignee==null)return null;
         assignee=cleanAssignee(assignee);
-
-        if(true)return assignee; // just to keep compatibility with current vector model
-
+        
         // remove suffixes
         boolean hasSuffixProblem = true;
         while(hasSuffixProblem) {
