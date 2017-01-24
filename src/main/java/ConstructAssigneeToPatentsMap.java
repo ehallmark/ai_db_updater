@@ -25,8 +25,7 @@ public class ConstructAssigneeToPatentsMap {
         }
     }
 
-
-    public static void main(String[] args) throws Exception {
+    public static void constructMap() throws Exception {
         // first load original assignee map and latest assignee map
         System.out.println("Starting to load latest assignee map...");
         Map<String,List<String>> latestAssigneeMap = UpdateLatestAssigneeHash.load();
@@ -38,13 +37,13 @@ public class ConstructAssigneeToPatentsMap {
         Map<String,Set<String>> assigneeToPatentsMap = new HashMap<>();
         latestAssigneeMap.forEach((patent,assignees)->{
             assignees.forEach(assignee->{
-               if(assigneeToPatentsMap.containsKey(assignee)) {
-                   assigneeToPatentsMap.get(assignee).add(patent);
-               } else{
-                   Set<String> patents = new HashSet<String>();
-                   patents.add(patent);
-                   assigneeToPatentsMap.put(assignee,patents);
-               }
+                if(assigneeToPatentsMap.containsKey(assignee)) {
+                    assigneeToPatentsMap.get(assignee).add(patent);
+                } else{
+                    Set<String> patents = new HashSet<String>();
+                    patents.add(patent);
+                    assigneeToPatentsMap.put(assignee,patents);
+                }
             });
         });
 
@@ -74,4 +73,9 @@ public class ConstructAssigneeToPatentsMap {
 
         System.out.println("Num assignees: "+assigneeToPatentsMap.size());
     }
+
+    public static void main(String[] args) throws Exception {
+        constructMap();
+    }
+
 }
