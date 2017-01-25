@@ -69,22 +69,23 @@ public class UpdateClassCodeToClassTitleMap {
             Node classification = classifications.item(temp);
             if (classification.getNodeType() == Node.ELEMENT_NODE) {
                 Element classElement = (Element) classification;
-                NodeList symbol = classElement.getElementsByTagName("classification-symbol");
-                if(symbol.getLength()>0) {
-                    String classSymbol = symbol.item(0).getTextContent();
-                    if(!classSymbol.trim().endsWith("/00")) {
-                        NodeList titles = classElement.getElementsByTagName("title-part");
-                        List<String> titleParts = new ArrayList<>(titles.getLength());
-                        for (int titleIdx = 0; titleIdx < titles.getLength(); titleIdx++) {
-                            Node titlePartNode = titles.item(titleIdx);
-                            if (titlePartNode.getNodeType() == Node.ELEMENT_NODE) {
-                                titleParts.add(titlePartNode.getTextContent());
+                Node symbol = classElement.getFirstChild();
+                if(symbol!=null) {
+                    String classSymbol = symbol.getTextContent();
+                    Node node = symbol.getNextSibling().getFirstChild();
+                    List<String> titleParts = new ArrayList<>();
+                    while(node!=null) {
+                        if(node.getNodeType() == Node.ELEMENT_NODE) {
+                            Element elem = (Element) node;
+                            if(elem.getTagName().equals("title-part")) {
+                                titleParts.add(elem.getTextContent());
                             }
                         }
-                        System.out.println("Symbol: " + classSymbol);
-                        System.out.println("Title: " + String.join("; ", titleParts));
-                        map.put(classSymbol, String.join("; ", titleParts));
+                        node = node.getNextSibling();
                     }
+                    System.out.println("Symbol: " + classSymbol);
+                    System.out.println("Title: " + String.join("; ", titleParts));
+                    map.put(classSymbol, String.join("; ", titleParts));
                 }
             }
         }
