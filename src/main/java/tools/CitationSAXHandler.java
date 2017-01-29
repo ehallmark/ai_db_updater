@@ -61,6 +61,7 @@ public class CitationSAXHandler extends DefaultHandler{
     public void reset() {
         isCitedDocNumber=false;
         inPublicationReference=false;
+        inApplicationReference=false;
         isDocNumber=false;
         isAppDate=false;
         isPubDate=false;
@@ -83,6 +84,10 @@ public class CitationSAXHandler extends DefaultHandler{
 
         if(qName.equals("publication-reference")){
             inPublicationReference=true;
+        }
+
+        if(qName.equals("application-reference")) {
+            inApplicationReference=true;
         }
 
         if(qName.equals("doc-number")&&inPublicationReference){
@@ -151,6 +156,10 @@ public class CitationSAXHandler extends DefaultHandler{
 
         if(qName.equals("patcit")) {
             inCitation=false;
+        }
+
+        if(qName.equals("application-reference")) {
+            inApplicationReference=false;
         }
 
         if(qName.equals("doc-number")&&inCitation) {

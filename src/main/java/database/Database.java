@@ -36,7 +36,6 @@ public class Database {
     private static File patentToClassificationMapFile = new File("patent_to_classification_map.jobj");
     public static File patentToInventionTitleMapFile = new File("patent_to_invention_title_map.jobj");
     public static File patentToOriginalAssigneeMapFile = new File("patent_to_original_assignee_map.jobj");
-    public static File pubDateToPatentsMapFile = new File("pubdate_to_patents_map.jobj");
     public static File patentToReferencedByMapFile = new File("patent_to_referenced_by_map.jobj");
     public static File patentToPubDateMapFile = new File("patent_to_pubdate_map_file.jobj");
     public static File patentToAppDateMapFile = new File("patent_to_appdate_map_file.jobj");
@@ -299,7 +298,6 @@ public class Database {
     }
 
     public static void loadAndIngestCitationAndDateData(int numTasks) throws Exception {
-        Map<String,Set<String>> pubDateToPatentsMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,LocalDate> patentToPubDateMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,LocalDate> patentToAppDateMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,Set<String>> patentToCitedPatentsMap = Collections.synchronizedMap(new HashMap<>());
@@ -426,6 +424,7 @@ public class Database {
                                             Set<String> related = handler.getRelatedDocuments();
                                             if(!related.isEmpty()) {
                                                 System.out.println(patNum+ " has "+related.size()+" related documents");
+                                                patentToRelatedDocMap.put(patNum,cited);
                                             }
                                         }
                                     } catch (Exception nfe) {
@@ -537,7 +536,6 @@ public class Database {
         saveObject(pubDateToPatentMap,pubDateToPatentMapFile);
         saveObject(patentToRelatedDocMap,patentToRelatedDocMapFile);
         saveObject(patentToReferencedByMap,patentToReferencedByMapFile);
-        saveObject(pubDateToPatentsMap,pubDateToPatentsMapFile);
         saveObject(patentToAppDateMap,patentToAppDateMapFile);
         saveObject(patentToPubDateMap,patentToPubDateMapFile);
     }
