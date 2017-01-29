@@ -1,9 +1,6 @@
 package main.java.database;
 
-import main.java.tools.AssignmentSAXHandler;
-import main.java.tools.InventionTitleSAXHandler;
-import main.java.tools.SAXHandler;
-import main.java.tools.ZipHelper;
+import main.java.tools.*;
 import net.lingala.zip4j.core.ZipFile;
 
 import javax.xml.parsers.SAXParser;
@@ -31,19 +28,39 @@ public class Database {
     private static String ASSIGNEE_DESTINATION_FILE_NAME = "patent_grant_assignees_folder";
     private static String MAINT_ZIP_FILE_NAME = "patent_grant_maint_fees.zip";
     private static String MAINT_DESTINATION_FILE_NAME = "patent_grant_maint_fees_folder";
+    private static String CITATION_DESTINATION_FILE_NAME = "citation_data_folder";
+    private static String CITATION_ZIP_FILE_NAME = "citation_data.zip";
     private static String INVENTION_TITLE_DESTINATION_FILE_NAME = "patent_grant_invention_title_folder";
     private static String INVENTION_TITLE_ZIP_FILE_NAME = "patent_grant_invention_titles.zip";
     private static File expiredPatentsSetFile = new File("expired_patents_set.jobj");
     private static File patentToClassificationMapFile = new File("patent_to_classification_map.jobj");
     public static File patentToInventionTitleMapFile = new File("patent_to_invention_title_map.jobj");
     public static File patentToOriginalAssigneeMapFile = new File("patent_to_original_assignee_map.jobj");
-
+    public static File pubDateToPatentsMapFile = new File("pubdate_to_patents_map.jobj");
+    public static File patentToReferencedByMapFile = new File("patent_to_referenced_by_map.jobj");
+    public static File patentToPubDateMapFile = new File("patent_to_pubdate_map_file.jobj");
+    public static File patentToAppDateMapFile = new File("patent_to_appdate_map_file.jobj");
+    public static File patentToRelatedDocMapFile = new File("patent_to_related_docs_map_file.jobj");
+    public static File pubDateToPatentMapFile = new File("pubdate_to_patent_map.jobj");
     static {
         try {
             conn = DriverManager.getConnection(patentDBUrl);
             conn.setAutoCommit(false);
         } catch(Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void saveObject(Object obj, File toSave) {
+        System.out.println("Saving "+toSave.getName()+"...");
+        try {
+            ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(toSave)));
+            oos.writeObject(obj);
+            oos.flush();
+            oos.close();
+            System.out.println("Saved " + toSave.getName() + ".");
+        } catch(IOException ioe) {
+            ioe.printStackTrace();
         }
     }
 
@@ -279,6 +296,250 @@ public class Database {
 
         savePatentToInventionTitleHash(patentToInventionTitleMap);
         savePatentToOriginalAssigneeHash(patentToOriginalAssigneeMap);
+    }
+
+    public static void loadAndIngestCitationAndDateData(int numTasks) throws Exception {
+        Map<String,Set<String>> pubDateToPatentsMap = Collections.synchronizedMap(new HashMap<>());
+        Map<String,LocalDate> patentToPubDateMap = Collections.synchronizedMap(new HashMap<>());
+        Map<String,LocalDate> patentToAppDateMap = Collections.synchronizedMap(new HashMap<>());
+        Map<String,Set<String>> patentToCitedPatentsMap = Collections.synchronizedMap(new HashMap<>());
+        Map<String,Set<String>> patentToRelatedDocMap = Collections.synchronizedMap(new HashMap());
+        List<RecursiveAction> tasks = new ArrayList<>();
+        Integer lastIngestedDate = 70000;
+        LocalDate date = LocalDate.now();
+        String endDateStr = String.valueOf(date.getYear()).substring(2,4)+String.format("%02d",date.getMonthValue())+String.format("%02d",date.getDayOfMonth());
+        Integer endDateInt = Integer.valueOf(endDateStr);
+
+        System.out.println("Starting with date: "+lastIngestedDate);
+        System.out.println("Ending with date: "+endDateInt);
+        String base_url = "http://storage.googleapis.com/patents/grant_full_text";
+        String secondary_url = "https://bulkdata.uspto.gov/data2/patent/grant/redbook/fulltext";
+        while(lastIngestedDate<=endDateInt) {
+            // Commit results to DB and update last ingest table
+            lastIngestedDate = lastIngestedDate+1;
+            // don't over search days
+            if(lastIngestedDate%100 > 31) {
+                lastIngestedDate = lastIngestedDate+100 - (lastIngestedDate%100);
+            }
+            if(lastIngestedDate%10000 > 1231) {
+                lastIngestedDate = lastIngestedDate+10000 - (lastIngestedDate%10000);
+            }
+
+            final int finalLastIngestedDate=lastIngestedDate;
+
+
+            // Load file from Google
+            RecursiveAction action = new RecursiveAction() {
+                @Override
+                protected void compute() {
+                    try {
+                        try {
+                            String dateStr = String.format("%06d", finalLastIngestedDate);
+                            URL website = new URL(base_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", finalLastIngestedDate) + ".zip");
+                            System.out.println("Trying: " + website.toString());
+                            ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                            FileOutputStream fos = new FileOutputStream(CITATION_ZIP_FILE_NAME + finalLastIngestedDate);
+                            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                            fos.close();
+
+                            try {
+                                // Unzip file
+                                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(CITATION_ZIP_FILE_NAME + finalLastIngestedDate)));
+                                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(CITATION_DESTINATION_FILE_NAME + finalLastIngestedDate)));
+                                ZipHelper.unzip(bis, bos);
+                                bis.close();
+                                bos.close();
+
+                                System.out.println("FOUND GOOGLE FILE!");
+                            } catch (Exception e) {
+                                System.out.println("Unable to unzip google file");
+                            }
+                        } catch (Exception e) {
+                            // try non Google
+                            try {
+                                String dateStr = String.format("%06d", finalLastIngestedDate);
+                                URL website = new URL(secondary_url + "/20" + dateStr.substring(0, 2) + "/ipg" + String.format("%06d", finalLastIngestedDate) + ".zip");
+                                System.out.println("Trying: " + website.toString());
+                                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                                FileOutputStream fos = new FileOutputStream(CITATION_ZIP_FILE_NAME + finalLastIngestedDate);
+                                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                                fos.close();
+                            } catch (Exception e2) {
+                                System.out.println("Not found");
+                                return;
+                            }
+
+                            try {
+                                // Unzip file
+                                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(CITATION_ZIP_FILE_NAME + finalLastIngestedDate)));
+                                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(CITATION_DESTINATION_FILE_NAME + finalLastIngestedDate)));
+                                ZipHelper.unzip(bis, bos);
+                                bis.close();
+                                bos.close();
+                                System.out.println("FOUND OTHER FILE!");
+
+                            } catch (Exception e2) {
+                                System.out.println("Unable to unzip file");
+                                return;
+                            }
+                        }
+
+
+                        // Ingest data for each file
+                        try {
+
+                            SAXParserFactory factory = SAXParserFactory.newInstance();
+                            factory.setNamespaceAware(false);
+                            factory.setValidating(false);
+                            // security vulnerable
+                            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+                            SAXParser saxParser = factory.newSAXParser();
+
+                            CitationSAXHandler handler = new CitationSAXHandler();
+
+
+                            FileReader fr = new FileReader(new File(CITATION_DESTINATION_FILE_NAME + finalLastIngestedDate));
+                            BufferedReader br = new BufferedReader(fr);
+                            String line;
+                            boolean firstLine = true;
+                            List<String> lines = new ArrayList<>();
+                            while ((line = br.readLine()) != null) {
+                                if (line.contains("<?xml") && !firstLine) {
+                                    // stop
+                                    saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
+                                    String patNum = handler.getPatentNumber();
+                                    try {
+                                        if (patNum!=null&&Integer.valueOf(patNum) >= 7000000) {
+                                            if (handler.getPubDate()!=null) {
+                                                System.out.println(patNum + " has pubDate: " + handler.getPubDate());
+                                                patentToPubDateMap.put(patNum, handler.getPubDate());
+                                            }
+                                            if(handler.getAppDate()!=null) {
+                                                patentToAppDateMap.put(patNum, handler.getAppDate());
+                                            }
+                                            Set<String> cited = handler.getCitedDocuments();
+                                            if(!cited.isEmpty()) {
+                                                System.out.println(patNum+" has "+cited.size()+" cited documents");
+                                                patentToCitedPatentsMap.put(patNum, cited);
+                                            }
+                                            Set<String> related = handler.getRelatedDocuments();
+                                            if(!related.isEmpty()) {
+                                                System.out.println(patNum+ " has "+related.size()+" related documents");
+                                            }
+                                        }
+                                    } catch (Exception nfe) {
+                                        // not a utility patent
+                                        // skip...
+                                    }
+
+                                    lines.clear();
+                                    handler.reset();
+                                }
+                                if (firstLine) firstLine = false;
+                                lines.add(line);
+                            }
+                            br.close();
+                            fr.close();
+
+                            // get the last one
+                            if (!lines.isEmpty()) {
+                                saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
+
+                                String patNum = handler.getPatentNumber();
+                                try {
+                                    if (patNum!=null&&Integer.valueOf(patNum) >= 7000000) {
+                                        if (handler.getPubDate()!=null) {
+                                            System.out.println(patNum + " has pubDate: " + handler.getPubDate());
+                                            patentToPubDateMap.put(patNum, handler.getPubDate());
+                                        }
+                                        if(handler.getAppDate()!=null) {
+                                            patentToAppDateMap.put(patNum, handler.getAppDate());
+                                        }
+                                        Set<String> cited = handler.getCitedDocuments();
+                                        if(!cited.isEmpty()) {
+                                            System.out.println(patNum+" has "+cited.size()+" cited documents");
+                                            patentToCitedPatentsMap.put(patNum, cited);
+                                        }
+                                        Set<String> related = handler.getRelatedDocuments();
+                                        if(!related.isEmpty()) {
+                                            System.out.println(patNum+ " has "+related.size()+" related documents");
+                                        }
+                                    }
+                                } catch (Exception nfe) {
+                                    // not a utility patent
+                                    // skip...
+                                }
+
+                                lines.clear();
+                                handler.reset();
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    } finally {
+                        // cleanup
+                        // Delete zip and related folders
+                        File zipFile = new File(CITATION_ZIP_FILE_NAME + finalLastIngestedDate);
+                        if (zipFile.exists()) zipFile.delete();
+
+                        File xmlFile = new File(CITATION_DESTINATION_FILE_NAME + finalLastIngestedDate);
+                        if (xmlFile.exists()) xmlFile.delete();
+                    }
+
+                }
+            };
+            action.fork();
+            tasks.add(action);
+
+            while(tasks.size()>numTasks) {
+                tasks.remove(0).join();
+            }
+        }
+
+        while(!tasks.isEmpty()) {
+            tasks.remove(0).join();
+        }
+
+        // invert patent map to get referenced by instead of referencing
+        Map<String,Set<String>> patentToReferencedByMap = Collections.synchronizedMap(new HashMap<>());
+        Set<String> validPatents = patentToPubDateMap.keySet();
+        patentToCitedPatentsMap.forEach((patent,citedSet)->{
+            if(validPatents.contains(patent)) {
+                citedSet.forEach(cited->{
+                    if(validPatents.contains(cited)) {
+                        if(patentToReferencedByMap.containsKey(cited)) {
+                            patentToReferencedByMap.get(cited).add(patent);
+                        } else {
+                            Set<String> set = new HashSet<>();
+                            set.add(patent);
+                            patentToReferencedByMap.put(cited,set);
+                        }
+                    }
+                });
+            }
+        });
+
+        // date to patent map
+        Map<LocalDate,Set<String>> pubDateToPatentMap = Collections.synchronizedMap(new HashMap<>());
+        patentToPubDateMap.forEach((patent,pubDate)->{
+            if(pubDateToPatentMap.containsKey(pubDate)) {
+                pubDateToPatentMap.get(pubDate).add(patent);
+            } else {
+                Set<String> set = new HashSet<>();
+                set.add(patent);
+                pubDateToPatentMap.put(pubDate,set);
+            }
+        });
+
+        saveObject(pubDateToPatentMap,pubDateToPatentMapFile);
+        saveObject(patentToRelatedDocMap,patentToRelatedDocMapFile);
+        saveObject(patentToReferencedByMap,patentToReferencedByMapFile);
+        saveObject(pubDateToPatentsMap,pubDateToPatentsMapFile);
+        saveObject(patentToAppDateMap,patentToAppDateMapFile);
+        saveObject(patentToPubDateMap,patentToPubDateMapFile);
     }
 
     public static void loadAndIngestMaintenanceFeeData() throws Exception {

@@ -92,7 +92,7 @@ public class AssigneeTrimmer {
     public static String standardizedAssignee(String assignee) {
         if(assignee==null)return null;
         assignee=cleanAssignee(assignee);
-        
+
         // remove suffixes
         boolean hasSuffixProblem = true;
         while(hasSuffixProblem) {
