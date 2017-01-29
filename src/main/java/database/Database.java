@@ -463,6 +463,7 @@ public class Database {
                                         Set<String> related = handler.getRelatedDocuments();
                                         if(!related.isEmpty()) {
                                             System.out.println(patNum+ " has "+related.size()+" related documents");
+                                            patentToRelatedDocMap.put(patNum,cited);
                                         }
                                     }
                                 } catch (Exception nfe) {
