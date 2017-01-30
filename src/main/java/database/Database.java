@@ -41,6 +41,7 @@ public class Database {
     public static File patentToAppDateMapFile = new File("patent_to_appdate_map_file.jobj");
     public static File patentToRelatedDocMapFile = new File("patent_to_related_docs_map_file.jobj");
     public static File pubDateToPatentMapFile = new File("pubdate_to_patent_map.jobj");
+    public static File patentToCitedPatentsMapFile = new File("patent_to_cited_patents_map.jobj");
     static {
         try {
             conn = DriverManager.getConnection(patentDBUrl);
@@ -534,6 +535,7 @@ public class Database {
             }
         });
 
+        saveObject(patentToCitedPatentsMap,patentToCitedPatentsMapFile);
         saveObject(pubDateToPatentMap,pubDateToPatentMapFile);
         saveObject(patentToRelatedDocMap,patentToRelatedDocMapFile);
         saveObject(patentToReferencedByMap,patentToReferencedByMapFile);
