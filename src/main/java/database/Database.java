@@ -683,6 +683,110 @@ public class Database {
                             continue;
                         }
                         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+                            TransactionSAXHandler handler = new TransactionSAXHandler();
+                            saxParser.parse(bis, handler);
+                            //Database.commit();
+                        } catch(Exception e) {
+                            System.out.println("Error ingesting file: "+file.getName());
+                            e.printStackTrace();
+                        } finally {
+                            file.delete();
+                        }
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            } finally {
+                // cleanup
+                // Delete zip and related folders
+                File zipFile = new File(ASSIGNEE_ZIP_FILE_NAME);
+                if (zipFile.exists()) zipFile.delete();
+
+                File xmlFile = new File(ASSIGNEE_DESTINATION_FILE_NAME);
+                if (xmlFile.exists()) xmlFile.delete();
+
+            }
+        }
+        try {
+            TransactionSAXHandler.save();
+        } catch(Exception e) {
+            System.out.println("Unable to save assignee file...");
+        }
+    }
+
+    public static void setupLatestTransactionData() throws Exception {
+        // go through assignment xml data and update records using assignment sax handler
+        LocalDate date = LocalDate.now();
+        String endDateStr = String.valueOf(date.getYear()).substring(2, 4) + String.format("%02d", date.getMonthValue()) + String.format("%02d", date.getDayOfMonth());
+        Integer endDateInt = Integer.valueOf(endDateStr);
+
+        // INITIAL OPTIONS TO SET
+        final int backYearDataDate = 151231;
+        final int numFilesForBackYearData = 14;
+        final int backYearDataStartNum = 1;
+        final int startDateNum = 160000;
+
+        List<String> backYearDates = new ArrayList<>(numFilesForBackYearData);
+        for(int i = backYearDataStartNum; i < backYearDataStartNum + numFilesForBackYearData; i++) {
+            backYearDates.add(String.format("%06d", backYearDataDate)+"-"+String.format("%02d", i));
+        }
+        int lastIngestedDate = startDateNum;
+        System.out.println("Starting with date: " + lastIngestedDate);
+        System.out.println("Ending with date: " + endDateInt);
+        String base_url = "https://bulkdata.uspto.gov/data2/patent/assignment/ad20";
+        while (lastIngestedDate <= endDateInt||backYearDates.size()>0) {
+            String finalUrlString;
+            if(backYearDates.isEmpty()) {
+                lastIngestedDate = lastIngestedDate + 1;
+                // don't over search days
+                if (lastIngestedDate % 100 > 31) {
+                    lastIngestedDate = lastIngestedDate + 100 - (lastIngestedDate % 100);
+                }
+                if (lastIngestedDate % 10000 > 1231) {
+                    lastIngestedDate = lastIngestedDate + 10000 - (lastIngestedDate % 10000);
+                }
+                finalUrlString=base_url + String.format("%06d", lastIngestedDate) + ".zip";
+            } else {
+                finalUrlString=base_url + backYearDates.remove(0) + ".zip";
+            }
+
+            try {
+                try {
+                    // Unzip file
+                    URL website = new URL(finalUrlString);
+                    System.out.println("Trying: " + website.toString());
+                    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                    FileOutputStream fos = new FileOutputStream(ASSIGNEE_ZIP_FILE_NAME);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                    fos.close();
+
+                    ZipFile zipFile = new ZipFile(ASSIGNEE_ZIP_FILE_NAME);
+                    zipFile.extractAll(ASSIGNEE_DESTINATION_FILE_NAME);
+
+                } catch (Exception e) {
+                    System.out.println("Unable to get file");
+                    continue;
+                }
+
+
+                // Ingest data for each file
+                try {
+                    SAXParserFactory factory = SAXParserFactory.newInstance();
+                    factory.setNamespaceAware(false);
+                    factory.setValidating(false);
+                    // security vulnerable
+                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+                    SAXParser saxParser = factory.newSAXParser();
+
+                    for(File file : new File(ASSIGNEE_DESTINATION_FILE_NAME).listFiles()) {
+                        if(!file.getName().endsWith(".xml")) {
+                            file.delete();
+                            continue;
+                        }
+                        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
                             AssignmentSAXHandler handler = new AssignmentSAXHandler();
                             saxParser.parse(bis, handler);
                             //Database.commit();
