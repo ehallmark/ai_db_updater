@@ -308,6 +308,7 @@ public class Database {
         LocalDate date = LocalDate.now();
         String endDateStr = String.valueOf(date.getYear()).substring(2,4)+String.format("%02d",date.getMonthValue())+String.format("%02d",date.getDayOfMonth());
         Integer endDateInt = Integer.valueOf(endDateStr);
+        Set<String> allPatents = Collections.synchronizedSet(new HashSet<>());
 
         System.out.println("Starting with date: "+lastIngestedDate);
         System.out.println("Ending with date: "+endDateInt);
@@ -325,7 +326,6 @@ public class Database {
             }
 
             final int finalLastIngestedDate=lastIngestedDate;
-
 
             // Load file from Google
             RecursiveAction action = new RecursiveAction() {
@@ -410,6 +410,7 @@ public class Database {
                                     String patNum = handler.getPatentNumber();
                                     try {
                                         if (patNum!=null&&Integer.valueOf(patNum) >= 7000000) {
+                                            allPatents.add(patNum);
                                             if (handler.getPubDate()!=null) {
                                                 System.out.println(patNum + " has pubDate: " + handler.getPubDate());
                                                 patentToPubDateMap.put(patNum, handler.getPubDate());
@@ -506,11 +507,10 @@ public class Database {
 
         // invert patent map to get referenced by instead of referencing
         Map<String,Set<String>> patentToReferencedByMap = Collections.synchronizedMap(new HashMap<>());
-        Set<String> validPatents = patentToPubDateMap.keySet();
         patentToCitedPatentsMap.forEach((patent,citedSet)->{
-            if(validPatents.contains(patent)) {
+            if(allPatents.contains(patent)) {
                 citedSet.forEach(cited->{
-                    if(validPatents.contains(cited)) {
+                    if(allPatents.contains(cited)) {
                         if(patentToReferencedByMap.containsKey(cited)) {
                             patentToReferencedByMap.get(cited).add(patent);
                         } else {
