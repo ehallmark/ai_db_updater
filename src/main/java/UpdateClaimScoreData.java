@@ -218,7 +218,7 @@ public class UpdateClaimScoreData {
         System.out.println("Saving results...");
         // save maps
         Database.saveObject(patentToIndependentClaimLengthMap,new File("patent_to_independent_claim_length_map.jobj"));
-        Database.saveObject(patentToIndependentClaimRatioMap,new File("patent_to_independent_claim_ratio_map"));
+        Database.saveObject(patentToIndependentClaimRatioMap,new File("patent_to_independent_claim_ratio_map.jobj"));
 
     }
 
