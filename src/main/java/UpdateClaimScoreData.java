@@ -204,15 +204,12 @@ public class UpdateClaimScoreData {
                 while(tasks.size()>numTasks) {
                     tasks.remove(0).join();
                 }
-                Database.commit();
 
             }
 
             while(!tasks.isEmpty()) {
                 tasks.remove(0).join();
             }
-            Database.commit();
-
 
         } catch(Exception e) {
             e.printStackTrace();
