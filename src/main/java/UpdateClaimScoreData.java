@@ -2,7 +2,6 @@ package main.java;
 
 import main.java.database.Database;
 import main.java.tools.ClassDataSAXHandler;
-import main.java.tools.SAXHandler;
 import main.java.tools.ZipHelper;
 
 import javax.xml.parsers.SAXParser;
@@ -26,7 +25,7 @@ public class UpdateClaimScoreData {
         Map<String,Double> patentToIndependentClaimRatioMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,Integer> patentToIndependentClaimLengthMap = Collections.synchronizedMap(new HashMap<>());
         try {
-            Set<String> expiredPatents = UpdateExpiredPatentsSet.load();
+            Set<String> expiredPatents = UpdateMaintenanceFeeData.load();
             if(expiredPatents==null) throw new RuntimeException("No expiredPatents found");
             final int numTasks = 124;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);

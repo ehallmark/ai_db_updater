@@ -548,7 +548,11 @@ public class Database {
     public static void loadAndIngestMaintenanceFeeData() throws Exception {
         // should be one at least every other month
         // Load file from Google
+        Map<String,Integer> patentToMaintenanceFeeReminderCount = new HashMap<>();
         Set<String> expiredPatentsSet = new HashSet<>();
+        Set<String> largeEntityPatents = new HashSet<>();
+        Set<String> smallEntityPatents = new HashSet<>();
+        Set<String> microEntityPatents = new HashSet<>();
         if (!(new File(MAINT_DESTINATION_FILE_NAME).exists())) {
             try {
                 String url = "https://bulkdata.uspto.gov/data2/patent/maintenancefee/MaintFeeEvents.zip";
@@ -577,10 +581,36 @@ public class Database {
                         try {
                             if (Integer.valueOf(patNum) >= 7000000) {
                                 String maintenanceCode = line.substring(46, 51).trim();
-                                if (patNum != null && maintenanceCode != null && maintenanceCode.equals("EXP.")) {
-                                    System.out.println(patNum + " has expired... Updating database now.");
-                                    expiredPatentsSet.add(patNum);
-                                    //updateIsExpiredForPatent(patNum, true);
+                                if (patNum != null && maintenanceCode != null ) {
+                                    if(maintenanceCode.equals("EXP.")) {
+                                        System.out.println(patNum + " has expired... Updating database now.");
+                                        expiredPatentsSet.add(patNum);
+                                    } else if (maintenanceCode.equals("EXPX")) {
+                                        // reinstated
+                                        System.out.println(patNum+" was reinstated!");
+                                        if(expiredPatentsSet.contains(patNum)) {
+                                            expiredPatentsSet.remove(patNum);
+                                        }
+                                    } else if (maintenanceCode.equals("REM.")) {
+                                        // reminder
+                                        if(patentToMaintenanceFeeReminderCount.containsKey(patNum)) {
+                                            patentToMaintenanceFeeReminderCount.put(patNum,patentToMaintenanceFeeReminderCount.get(patNum)+1);
+                                        } else {
+                                            patentToMaintenanceFeeReminderCount.put(patNum,1);
+                                        }
+                                    } else if (maintenanceCode.startsWith("M2")||maintenanceCode.startsWith("SM")||maintenanceCode.equals("LTOS")||maintenanceCode.equals("MTOS")) {
+                                        smallEntityPatents.add(patNum);
+                                        if(largeEntityPatents.contains(patNum)) largeEntityPatents.remove(patNum);
+                                        if(microEntityPatents.contains(patNum)) microEntityPatents.remove(patNum);
+                                    } else if (maintenanceCode.startsWith("M1")||maintenanceCode.startsWith("LSM")) {
+                                        largeEntityPatents.add(patNum);
+                                        if(smallEntityPatents.contains(patNum)) smallEntityPatents.remove(patNum);
+                                        if(microEntityPatents.contains(patNum)) microEntityPatents.remove(patNum);
+                                    } else if(maintenanceCode.startsWith("M3")||maintenanceCode.equals("STOM")) {
+                                        microEntityPatents.add(patNum);
+                                        if(largeEntityPatents.contains(patNum)) largeEntityPatents.remove(patNum);
+                                        if(smallEntityPatents.contains(patNum)) smallEntityPatents.remove(patNum);
+                                    }
                                 }
                             }
                         } catch (NumberFormatException nfe) {
@@ -596,6 +626,19 @@ public class Database {
         });
 
         saveExpiredPatentsSet(expiredPatentsSet);
+        
+        File largeEntityPatentFile = new File("large_entity_patents_set.jobj");
+        Database.saveObject(largeEntityPatents,largeEntityPatentFile);
+
+        File smallEntityPatentFile = new File("small_entity_patents_set.jobj");
+        Database.saveObject(smallEntityPatents,smallEntityPatentFile);
+
+        File microEntityPatentFile = new File("micro_entity_patents_set.jobj");
+        Database.saveObject(microEntityPatents,microEntityPatentFile);
+
+        File patentToFeeReminderMapFile = new File("patent_to_fee_reminder_count_map.jobj");
+        Database.saveObject(patentToMaintenanceFeeReminderCount,patentToFeeReminderMapFile);
+
 
     }
 

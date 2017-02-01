@@ -23,7 +23,7 @@ public class IngestGoogleXML {
 
     public static void main(String[] args) {
         try {
-            Set<String> expiredPatents = UpdateExpiredPatentsSet.load();
+            Set<String> expiredPatents = UpdateMaintenanceFeeData.load();
             if(expiredPatents==null) throw new RuntimeException("No expiredPatents found");
             Map<String,List<String>> patentToAssigneeMap = UpdateLatestAssigneeHash.load();
             if(patentToAssigneeMap==null) throw new RuntimeException("No patentToAssigneeMap found");

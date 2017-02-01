@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * Created by ehallmark on 1/19/17.
  */
-public class UpdateExpiredPatentsSet {
+public class UpdateMaintenanceFeeData {
     public static Set<String> load() throws IOException,ClassNotFoundException {
         return Database.loadExpiredPatentsSet();
     }
