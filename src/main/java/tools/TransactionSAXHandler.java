@@ -28,14 +28,11 @@ public class TransactionSAXHandler extends DefaultHandler{
 
     private static final File patentToSecurityInterestCountMapFile = new File("patent_to_security_interest_count_map.jobj");
     private static Map<String,Integer> patentToSecurityInterestCountMap = new HashMap<>();
-    private static final File patentToTransactionCountMapFile = new File("patent_to_transaction_count_map.jobj");
-    private static Map<String,Integer> patentToTransactionCountMap = new HashMap<>();
     private static final File patentToTransactionSizesMapFile = new File("patent_to_transaction_sizes_map.jobj");
     private static Map<String,List<Integer>> patentToTransactionSizeMap = new HashMap<>();
 
     public static void save() throws IOException {
         Database.saveObject(patentToSecurityInterestCountMap,patentToSecurityInterestCountMapFile);
-        Database.saveObject(patentToTransactionCountMap,patentToTransactionCountMapFile);
         Database.saveObject(patentToTransactionSizeMap,patentToTransactionSizesMapFile);
     }
 
@@ -94,11 +91,6 @@ public class TransactionSAXHandler extends DefaultHandler{
                                 if(isAssignorsInterest) {
                                     System.out.println("Assignors interest: "+patent);
                                     // transaction
-                                    if(patentToTransactionCountMap.containsKey(patent)) {
-                                        patentToTransactionCountMap.put(patent,patentToTransactionCountMap.get(patent)+1);
-                                    } else {
-                                        patentToTransactionCountMap.put(patent,1);
-                                    }
                                     if(patentToTransactionSizeMap.containsKey(patent)) {
                                         patentToTransactionSizeMap.get(patent).add(currentPatents.size());
                                     } else {
