@@ -30,6 +30,8 @@ public class Database {
     private static String MAINT_DESTINATION_FILE_NAME = "patent_grant_maint_fees_folder";
     private static String CITATION_DESTINATION_FILE_NAME = "citation_data_folder";
     private static String CITATION_ZIP_FILE_NAME = "citation_data.zip";
+    private static String TRANSACTION_DESTINATION_FILE_NAME = "transaction_data_folder/";
+    private static String TRANSACTION_ZIP_FILE_NAME = "transaction_data.zip";
     private static String INVENTION_TITLE_DESTINATION_FILE_NAME = "patent_grant_invention_title_folder";
     private static String INVENTION_TITLE_ZIP_FILE_NAME = "patent_grant_invention_titles.zip";
     private static File expiredPatentsSetFile = new File("expired_patents_set.jobj");
@@ -683,7 +685,7 @@ public class Database {
                             continue;
                         }
                         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
-                            TransactionSAXHandler handler = new TransactionSAXHandler();
+                            AssignmentSAXHandler handler = new AssignmentSAXHandler();
                             saxParser.parse(bis, handler);
                             //Database.commit();
                         } catch(Exception e) {
@@ -710,7 +712,7 @@ public class Database {
             }
         }
         try {
-            TransactionSAXHandler.save();
+            AssignmentSAXHandler.save();
         } catch(Exception e) {
             System.out.println("Unable to save assignee file...");
         }
@@ -758,12 +760,12 @@ public class Database {
                     URL website = new URL(finalUrlString);
                     System.out.println("Trying: " + website.toString());
                     ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                    FileOutputStream fos = new FileOutputStream(ASSIGNEE_ZIP_FILE_NAME);
+                    FileOutputStream fos = new FileOutputStream(TRANSACTION_ZIP_FILE_NAME);
                     fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
                     fos.close();
 
-                    ZipFile zipFile = new ZipFile(ASSIGNEE_ZIP_FILE_NAME);
-                    zipFile.extractAll(ASSIGNEE_DESTINATION_FILE_NAME);
+                    ZipFile zipFile = new ZipFile(TRANSACTION_ZIP_FILE_NAME);
+                    zipFile.extractAll(TRANSACTION_DESTINATION_FILE_NAME);
 
                 } catch (Exception e) {
                     System.out.println("Unable to get file");
@@ -781,13 +783,13 @@ public class Database {
                     factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
                     SAXParser saxParser = factory.newSAXParser();
 
-                    for(File file : new File(ASSIGNEE_DESTINATION_FILE_NAME).listFiles()) {
+                    for(File file : new File(TRANSACTION_DESTINATION_FILE_NAME).listFiles()) {
                         if(!file.getName().endsWith(".xml")) {
                             file.delete();
                             continue;
                         }
                         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
-                            AssignmentSAXHandler handler = new AssignmentSAXHandler();
+                            TransactionSAXHandler handler = new TransactionSAXHandler();
                             saxParser.parse(bis, handler);
                             //Database.commit();
                         } catch(Exception e) {
@@ -805,16 +807,16 @@ public class Database {
             } finally {
                 // cleanup
                 // Delete zip and related folders
-                File zipFile = new File(ASSIGNEE_ZIP_FILE_NAME);
+                File zipFile = new File(TRANSACTION_ZIP_FILE_NAME);
                 if (zipFile.exists()) zipFile.delete();
 
-                File xmlFile = new File(ASSIGNEE_DESTINATION_FILE_NAME);
+                File xmlFile = new File(TRANSACTION_DESTINATION_FILE_NAME);
                 if (xmlFile.exists()) xmlFile.delete();
 
             }
         }
         try {
-            AssignmentSAXHandler.save();
+            TransactionSAXHandler.save();
         } catch(Exception e) {
             System.out.println("Unable to save assignee file...");
         }
