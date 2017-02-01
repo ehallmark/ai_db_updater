@@ -626,7 +626,7 @@ public class Database {
         });
 
         saveExpiredPatentsSet(expiredPatentsSet);
-        
+
         File largeEntityPatentFile = new File("large_entity_patents_set.jobj");
         Database.saveObject(largeEntityPatents,largeEntityPatentFile);
 
