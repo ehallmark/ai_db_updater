@@ -90,7 +90,6 @@ public class PatentAPIHandler {
 
             HttpResponse result = httpClient.execute(request);
             String json = EntityUtils.toString(result.getEntity(), "UTF-8");
-            System.out.println("Response: "+json);
             com.google.gson.Gson gson = new com.google.gson.Gson();
             PatentResponse response = gson.fromJson(json, PatentResponse.class);
 
@@ -120,40 +119,12 @@ public class PatentAPIHandler {
                 }
             });
         });
-        // consolidate assignees
-        Map<String,Set<String>> newMap = new HashMap<>();
-        boolean done = false;
-        Set<String> alreadyAdded = new HashSet<>();
-        while(!done) {
-            done = true;
-            for(Map.Entry<String,Set<String>> e : map.entrySet().stream().sorted((e1,e2)->Integer.compare(e1.getKey().length(),e2.getKey().length())).collect(Collectors.toList())) {
-                if(!alreadyAdded.contains(e.getKey())) {
-                    Set<String> set = new HashSet<>(map.get(e.getKey()));
-                    newMap.put(e.getKey(),set);
-                }
-                else if(newMap.keySet().stream().anyMatch(a->a.startsWith(e.getKey())||e.getKey().startsWith(a))) {
-                    for(String a : newMap.keySet()) {
-                        if(a.startsWith(e.getKey())||e.getKey().startsWith(a)) {
-                            newMap.get(a).addAll(map.get(e.getKey()));
-                        } else {
-                            Set<String> set = new HashSet<>(map.get(e.getKey()));
-                            newMap.put(a,set);
-                        }
-                    }
-                    done=false;
-                    alreadyAdded.add(e.getKey());
-                    break;
-                }
-            }
-        }
-        map.clear();
-        map.putAll(newMap);
     }
 
     public static void writeAssigneeDataCountsToCSV(Map<String,Set<String>> assigneeToPatentsMap, File file) {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-            for (Map.Entry<String, Set<String>> e : assigneeToPatentsMap.entrySet()) {
+            for (Map.Entry<String, Set<String>> e : assigneeToPatentsMap.entrySet().stream().sorted((e1,e2)->e1.getKey().compareTo(e2.getKey())).collect(Collectors.toList())) {
                 String assignee = e.getKey();
                 Set<String> patents = e.getValue();
                 String line = assignee + "," + patents.size() + "\n";
@@ -168,15 +139,44 @@ public class PatentAPIHandler {
         }
     }
 
+    private static void groupImportantAssignees(Map<String,Set<String>> map, Collection<String> importantAssignees) {
+        // consolidate assignees
+        final String DEFAULT_GROUP_NAME = "**OTHER**";
+        Map<String,Set<String>> newMap = new HashMap<>();
+        newMap.put(DEFAULT_GROUP_NAME,new HashSet<>());
+        importantAssignees.forEach(assignee->newMap.put(assignee,new HashSet<>()));
+        for(Map.Entry<String,Set<String>> e : map.entrySet()) {
+            String importantAssignee = null;
+            for(String assignee: importantAssignees) {
+                if(e.getKey().contains(assignee)) {
+                    importantAssignee=assignee;
+                    break;
+                }
+            }
+            if(importantAssignee==null) {
+                newMap.get(DEFAULT_GROUP_NAME).addAll(e.getValue());
+            } else {
+                newMap.get(importantAssignee).addAll(e.getValue());
+            }
+        }
+        map.clear();
+        map.putAll(newMap);
+    }
+
     public static void main(String[] args) {
         /*
             List<Patent> patents = requestAllPatentsFromAssigneesAndClassCodes(Arrays.asList("microsoft","panasonic"),Arrays.asList("G06F3\\/0383"));
         */
+        List<String> importantAssignees = Arrays.asList("Nokia", "Samsung", "Ericsson", "Panasonic", "NTT DoCoMo", "IP Bridge", "Sisvel", "Philips","Microsoft")
+                .stream()
+                .map(a->a.toUpperCase())
+                .collect(Collectors.toList());
         {
             Map<String, Set<String>> assigneeTo2GMap = new HashMap<>();
             List<Patent> patents2G = requestAllPatentsFromKeywords(Arrays.asList("GSM"));
             System.out.println("Total 2G patents found: " + patents2G.size());
             addResultsToAssigneeMap(patents2G, assigneeTo2GMap);
+            groupImportantAssignees(assigneeTo2GMap,importantAssignees);
             Database.saveObject(assigneeTo2GMap,new File("assignee_to_2g_patents_map.jobj"));
             writeAssigneeDataCountsToCSV(assigneeTo2GMap,new File("2g_assignee_data.csv"));
         }
@@ -185,6 +185,7 @@ public class PatentAPIHandler {
             List<Patent> patents3G = requestAllPatentsFromKeywords(Arrays.asList("UMTS"));
             System.out.println("Total 4G patents found: "+patents3G.size());
             addResultsToAssigneeMap(patents3G, assigneeTo3GMap);
+            groupImportantAssignees(assigneeTo3GMap,importantAssignees);
             Database.saveObject(assigneeTo3GMap,new File("assignee_to_3g_patents_map.jobj"));
             writeAssigneeDataCountsToCSV(assigneeTo3GMap,new File("3g_assignee_data.csv"));
         }
@@ -193,6 +194,7 @@ public class PatentAPIHandler {
             System.out.println("Total 4G patents found: " + patents4G.size());
             Map<String, Set<String>> assigneeTo4GMap = new HashMap<>();
             addResultsToAssigneeMap(patents4G, assigneeTo4GMap);
+            groupImportantAssignees(assigneeTo4GMap,importantAssignees);
             Database.saveObject(assigneeTo4GMap,new File("assignee_to_4g_patents_map.jobj"));
             writeAssigneeDataCountsToCSV(assigneeTo4GMap,new File("4g_assignee_data.csv"));
         }
