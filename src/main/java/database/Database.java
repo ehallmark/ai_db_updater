@@ -932,7 +932,7 @@ public class Database {
                     if (line.length() >= 32) {
                         String patNum = line.substring(10, 17).trim();
                         try {
-                            if (Integer.valueOf(patNum) >= 7000000) {
+                            if (Integer.valueOf(patNum) >= 6000000) {
                                 String cpcSection = line.substring(17, 18);
                                 String cpcClass = cpcSection + line.substring(18, 20);
                                 String cpcSubclass = cpcClass + line.substring(20, 21);
