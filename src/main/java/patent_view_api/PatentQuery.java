@@ -1,5 +1,6 @@
 package main.java.patent_view_api;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.StringJoiner;
 
@@ -11,7 +12,7 @@ public class PatentQuery implements Query {
     public PatentQuery(Collection<String> classCodes, int page) {
         StringJoiner classCodeOr = new StringJoiner("\",\"","[\"","\"]");
         classCodes.forEach(classCode->classCodeOr.add(classCode));
-        query="q={\"cpc_subgroup_id\":"+classCodeOr.toString()+"}&f=[\"patent_number\",\"assignee_organization\",\"cpc_subgroup_id\"]&o={\"page\":"+page+",\"per_page\":25}";
+        query="q={\"_and\":[{\"cpc_subgroup_id\":"+classCodeOr.toString()+"},{\"_gte\":{\"patent_date\":\"" + LocalDate.now().minusYears(20).toString() + "\"}}]}&f=[\"patent_number\",\"assignee_organization\",\"cpc_subgroup_id\"]&o={\"page\":"+page+",\"per_page\":25}";
     }
     public String toString() {
         return query;
