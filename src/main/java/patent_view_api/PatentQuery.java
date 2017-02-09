@@ -8,12 +8,10 @@ import java.util.StringJoiner;
  */
 public class PatentQuery implements Query {
     private String query;
-    public PatentQuery(Collection<String> assignees, Collection<String> classCodes, int page) {
-        StringJoiner assigneeOr = new StringJoiner("\",\"","[\"","\"]");
-        assignees.forEach(assignee->assigneeOr.add(assignee));
+    public PatentQuery(Collection<String> classCodes, int page) {
         StringJoiner classCodeOr = new StringJoiner("\",\"","[\"","\"]");
         classCodes.forEach(classCode->classCodeOr.add(classCode));
-        query="q={\"_and\":[{\"_begins\":{\"assignee_organization\":"+assigneeOr.toString()+"}},{\"cpc_subgroup_id\":"+classCodeOr.toString()+"}]}&f=[\"patent_number\",\"assignee_organization\",\"cpc_subgroup_id\"]&o={\"page\":"+page+",\"per_page\":25}";
+        query="q={\"cpc_subgroup_id\":"+classCodeOr.toString()+"}&f=[\"patent_number\",\"assignee_organization\",\"cpc_subgroup_id\"]&o={\"page\":"+page+",\"per_page\":25}";
     }
     public String toString() {
         return query;

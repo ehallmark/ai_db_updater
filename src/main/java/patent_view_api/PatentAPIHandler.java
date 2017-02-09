@@ -13,10 +13,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,8 +22,8 @@ import java.util.stream.Collectors;
  * Created by Evan on 2/5/2017.
  */
 public class PatentAPIHandler {
-    public static List<Patent> requestAllPatentsFromAssigneesAndClassCodes(Collection<String> assignees, Collection<String> classCodes) {
-        PatentQuery query = new PatentQuery(assignees,classCodes,1);
+    public static List<Patent> requestAllPatentsFromAssigneesAndClassCodes(Collection<String> classCodes) {
+        PatentQuery query = new PatentQuery(classCodes,1);
         int totalResults;
         try {
             totalResults = requestPatents(query).getTotalPatentCount();
@@ -38,7 +35,7 @@ public class PatentAPIHandler {
         List<Patent> results = new ArrayList<>(totalResults);
         int page = 1;
         while(results.size()<totalResults) {
-            query = new PatentQuery(assignees,classCodes,page);
+            query = new PatentQuery(classCodes,page);
             try {
                 results.addAll(requestPatents(query).getPatents());
             } catch(Exception e) {
@@ -141,9 +138,7 @@ public class PatentAPIHandler {
 
     private static void groupImportantAssignees(Map<String,Set<String>> map, Collection<String> importantAssignees) {
         // consolidate assignees
-        final String DEFAULT_GROUP_NAME = "**OTHER**";
         Map<String,Set<String>> newMap = new HashMap<>();
-        newMap.put(DEFAULT_GROUP_NAME,new HashSet<>());
         importantAssignees.forEach(assignee->newMap.put(assignee,new HashSet<>()));
         for(Map.Entry<String,Set<String>> e : map.entrySet()) {
             String importantAssignee = null;
@@ -154,7 +149,13 @@ public class PatentAPIHandler {
                 }
             }
             if(importantAssignee==null) {
-                newMap.get(DEFAULT_GROUP_NAME).addAll(e.getValue());
+                if(newMap.containsKey(e.getKey())) {
+                    newMap.get(e.getKey()).addAll(e.getValue());
+                } else {
+                    Set<String> set = new HashSet<>();
+                    set.addAll(e.getValue());
+                    newMap.put(e.getKey(),set);
+                }
             } else {
                 newMap.get(importantAssignee).addAll(e.getValue());
             }
@@ -163,7 +164,19 @@ public class PatentAPIHandler {
         map.putAll(newMap);
     }
 
-    public static void main(String[] args) {
+    private static List<String> loadKeywordFile(File file) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        List<String> keywords = reader.lines()
+                .filter(line->line!=null&&line.trim().length()>0)
+                .map(line->line.trim().replaceAll("_"," "))
+                .limit(30)
+                .collect(Collectors.toList());
+        System.out.println("Keywords: "+String.join("; ",keywords));
+        reader.close();
+        return keywords;
+    }
+
+    public static void main(String[] args) throws IOException{
         /*
             List<Patent> patents = requestAllPatentsFromAssigneesAndClassCodes(Arrays.asList("microsoft","panasonic"),Arrays.asList("G06F3\\/0383"));
         */
@@ -173,7 +186,7 @@ public class PatentAPIHandler {
                 .collect(Collectors.toList());
         {
             Map<String, Set<String>> assigneeTo2GMap = new HashMap<>();
-            List<Patent> patents2G = requestAllPatentsFromKeywords(Arrays.asList("GSM"));
+            List<Patent> patents2G = requestAllPatentsFromKeywords(loadKeywordFile(new File("ms_sep_2g_keywords.csv")));
             System.out.println("Total 2G patents found: " + patents2G.size());
             addResultsToAssigneeMap(patents2G, assigneeTo2GMap);
             groupImportantAssignees(assigneeTo2GMap,importantAssignees);
@@ -182,7 +195,7 @@ public class PatentAPIHandler {
         }
         {
             Map<String,Set<String>> assigneeTo3GMap = new HashMap<>();
-            List<Patent> patents3G = requestAllPatentsFromKeywords(Arrays.asList("UMTS"));
+            List<Patent> patents3G = requestAllPatentsFromKeywords(loadKeywordFile(new File("ms_sep_3g_keywords.csv")));
             System.out.println("Total 4G patents found: "+patents3G.size());
             addResultsToAssigneeMap(patents3G, assigneeTo3GMap);
             groupImportantAssignees(assigneeTo3GMap,importantAssignees);
@@ -190,7 +203,7 @@ public class PatentAPIHandler {
             writeAssigneeDataCountsToCSV(assigneeTo3GMap,new File("3g_assignee_data.csv"));
         }
         {
-            List<Patent> patents4G = requestAllPatentsFromKeywords(Arrays.asList("LTE"));
+            List<Patent> patents4G = requestAllPatentsFromKeywords(loadKeywordFile(new File("ms_sep_4g_keywords.csv")));
             System.out.println("Total 4G patents found: " + patents4G.size());
             Map<String, Set<String>> assigneeTo4GMap = new HashMap<>();
             addResultsToAssigneeMap(patents4G, assigneeTo4GMap);

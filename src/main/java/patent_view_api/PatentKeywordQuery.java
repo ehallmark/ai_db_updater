@@ -10,9 +10,11 @@ import java.util.StringJoiner;
 public class PatentKeywordQuery implements Query {
     private String query;
     public PatentKeywordQuery(Collection<String> keywords, int page) {
-        StringJoiner keywordOr = new StringJoiner(" ","\"","\"");
-        keywords.forEach(keyword->keywordOr.add(keyword));
-        query="q={\"_and\":[{\"_or\":[{\"_text_any\":{\"patent_title\":"+keywordOr.toString()+"}},{\"_text_any\":{\"patent_abstract\":"+keywordOr.toString()+"}}]},{\"_gte\":{\"patent_date\":\""+ LocalDate.now().minusYears(20).toString()+"\"}}]}&f=[\"patent_number\",\"assignee_organization\",\"patent_title\"]&o={\"page\":"+page+",\"per_page\":25}";
+        StringJoiner keywordOr = new StringJoiner(",");
+        for(String keyword: keywords) {
+            keywordOr.add("{\"_text_all\":{\"patent_title\":\""+keyword+"\"}},{\"_text_all\":{\"patent_abstract\":\""+keyword+"\"}}");
+        }
+        query="q={\"_and\":[{\"_or\":["+keywordOr.toString()+"]},{\"_gte\":{\"patent_date\":\""+ LocalDate.now().minusYears(20).toString()+"\"}}]}&f=[\"patent_number\",\"assignee_organization\",\"patent_title\",\"cpc_subgroup_id\"]&o={\"page\":"+page+",\"per_page\":25}";
     }
     public String toString() {
         return query;
