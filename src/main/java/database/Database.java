@@ -44,6 +44,8 @@ public class Database {
     public static File patentToRelatedDocMapFile = new File("patent_to_related_docs_map_file.jobj");
     public static File pubDateToPatentMapFile = new File("pubdate_to_patent_map.jobj");
     public static File patentToCitedPatentsMapFile = new File("patent_to_cited_patents_map.jobj");
+    public static File lapsedPatentsSetFile = new File("lapsed_patents_set.jobj");
+    public static File patentToPriorityDateMapFile = new File("patent_to_priority_date_map.jobj");
     static {
         try {
             conn = DriverManager.getConnection(patentDBUrl);
@@ -305,6 +307,8 @@ public class Database {
         Map<String,LocalDate> patentToAppDateMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,Set<String>> patentToCitedPatentsMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,Set<String>> patentToRelatedDocMap = Collections.synchronizedMap(new HashMap());
+        Map<String,LocalDate> patentToPriorityDateMap = Collections.synchronizedMap(new HashMap<>());
+        Set<String> lapsedPatentsSet = Collections.synchronizedSet(new HashSet<>());
         List<RecursiveAction> tasks = new ArrayList<>();
         Integer lastIngestedDate = 70000;
         LocalDate date = LocalDate.now();
@@ -459,6 +463,13 @@ public class Database {
                                         if(handler.getAppDate()!=null) {
                                             patentToAppDateMap.put(patNum, handler.getAppDate());
                                         }
+                                        if(handler.getPriorityDate()!=null) {
+                                            patentToPriorityDateMap.put(patNum,handler.getPriorityDate());
+                                            LocalDate date = handler.getPriorityDate();
+                                            if(date.plusYears(20).isBefore(LocalDate.now())) {
+                                                lapsedPatentsSet.add(patNum);
+                                            }
+                                        }
                                         Set<String> cited = handler.getCitedDocuments();
                                         if(!cited.isEmpty()) {
                                             System.out.println(patNum+" has "+cited.size()+" cited documents");
@@ -543,6 +554,8 @@ public class Database {
         saveObject(patentToReferencedByMap,patentToReferencedByMapFile);
         saveObject(patentToAppDateMap,patentToAppDateMapFile);
         saveObject(patentToPubDateMap,patentToPubDateMapFile);
+        saveObject(patentToPriorityDateMap,patentToPriorityDateMapFile);
+        saveObject(lapsedPatentsSet,lapsedPatentsSetFile);
     }
 
     public static void loadAndIngestMaintenanceFeeData() throws Exception {

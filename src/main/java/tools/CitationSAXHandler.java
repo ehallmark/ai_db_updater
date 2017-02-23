@@ -29,11 +29,14 @@ public class CitationSAXHandler extends DefaultHandler{
     boolean inCitation=false;
     boolean isRelatedDocNumber=false;
     boolean inRelatedDoc=false;
+    boolean inPriorityClaims=false;
     boolean isCitedDocNumber = false;
+    boolean isPriorityDate = false;
     boolean shouldTerminate = false;
     String pubDocNumber;
     LocalDate appDate;
     LocalDate pubDate;
+    LocalDate priorityDate;
     List<String> documentPieces = new ArrayList<>();
     private Set<String> citedDocuments = new HashSet<>();
     private Set<String> relatedDocuments = new HashSet<>();
@@ -49,6 +52,8 @@ public class CitationSAXHandler extends DefaultHandler{
     public LocalDate getPubDate() {
         return pubDate;
     }
+
+    public LocalDate getPriorityDate() { return (priorityDate==null)?appDate:priorityDate; }
 
     public Set<String> getCitedDocuments() {
         return new HashSet<>(citedDocuments);
@@ -70,7 +75,10 @@ public class CitationSAXHandler extends DefaultHandler{
         appDate=null;
         pubDate=null;
         inRelatedDoc=false;
+        inPriorityClaims=false;
         isRelatedDocNumber=false;
+        isPriorityDate=false;
+        priorityDate=null;
         pubDocNumber=null;
         documentPieces.clear();
         citedDocuments.clear();
@@ -96,6 +104,14 @@ public class CitationSAXHandler extends DefaultHandler{
 
         if(qName.equals("date")&&inPublicationReference){
             isPubDate=true;
+        }
+
+        if(qName.equals("priority-claims")) {
+            inPriorityClaims=true;
+        }
+
+        if(inPriorityClaims&&qName.equals("date")) {
+            isPriorityDate=true;
         }
 
         if(qName.equals("date")&&inApplicationReference){
@@ -128,6 +144,18 @@ public class CitationSAXHandler extends DefaultHandler{
             if(pubDocNumber.replaceAll("[^0-9]","").length()!=pubDocNumber.length()) {
                 pubDocNumber=null;
                 shouldTerminate = true;
+            }
+            documentPieces.clear();
+        }
+
+        if(qName.equals("date")&&inPriorityClaims){
+            isPriorityDate=false;
+            try {
+                LocalDate date = LocalDate.parse(String.join("", documentPieces).trim(), DateTimeFormatter.BASIC_ISO_DATE);
+                if(priorityDate==null||(date.isBefore(priorityDate))) {
+                    priorityDate=date;
+                }
+            } catch(Exception dateException) {
             }
             documentPieces.clear();
         }
@@ -197,7 +225,7 @@ public class CitationSAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if((!shouldTerminate)&&(isCitedDocNumber||isDocNumber||isRelatedDocNumber||isAppDate||isPubDate)){
+        if((!shouldTerminate)&&(isCitedDocNumber||isDocNumber||isPriorityDate||isRelatedDocNumber||isAppDate||isPubDate)){
             documentPieces.add(new String(ch,start,length));
         }
 
