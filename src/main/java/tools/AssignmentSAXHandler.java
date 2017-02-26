@@ -142,7 +142,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
                 AtomicInteger patentCount = new AtomicInteger(0);
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
-                    if(patent.startsWith("0"))patent.replaceFirst("0","");
+                    if(patent.startsWith("0"))patent=patent.replaceFirst("0","");
                     if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
                         try {
                             if(Integer.valueOf(patent) >= 7000000) {

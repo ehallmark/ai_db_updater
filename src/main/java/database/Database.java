@@ -691,7 +691,7 @@ public class Database {
 
         List<String> backYearDates = new ArrayList<>(numFilesForBackYearData);
         for(int i = backYearDataStartNum; i < backYearDataStartNum + numFilesForBackYearData; i++) {
-            backYearDates.add(String.format("%06d", backYearDataDate)+"-"+String.format("%02d", i));
+           // backYearDates.add(String.format("%06d", backYearDataDate)+"-"+String.format("%02d", i));
         }
 
         int lastIngestedDate = startDateNum;
