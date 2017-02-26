@@ -135,7 +135,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         } else {
                             assigneeToAssetsPurchasedCountMap.put(assignee,currentPatents.size());
                         }
-                        System.out.println("Adding "+currentPatents.size()+ " assets sold to assignee: "+assignee;
+                        System.out.println("Adding "+currentPatents.size()+ " assets sold to assignee: "+assignee);
                     });
                     currentAssignors.forEach(assignor->{
                         if(assigneeToAssetsSoldCountMap.containsKey(assignor)) {
@@ -143,7 +143,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         } else {
                             assigneeToAssetsSoldCountMap.put(assignor,currentPatents.size());
                         }
-                        System.out.println("Adding "+currentPatents.size()+ " assets sold to assignor: "+assignor;
+                        System.out.println("Adding "+currentPatents.size()+ " assets sold to assignor: "+assignor);
                     });
                 }
                 List<String> dupAssignees = new ArrayList<>(currentAssignees.size());
