@@ -135,6 +135,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         } else {
                             assigneeToAssetsPurchasedCountMap.put(assignee,currentPatents.size());
                         }
+                        System.out.println("Adding "+currentPatents.size()+ " assets sold to assignee: "+assignee;
                     });
                     currentAssignors.forEach(assignor->{
                         if(assigneeToAssetsSoldCountMap.containsKey(assignor)) {
@@ -142,12 +143,14 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         } else {
                             assigneeToAssetsSoldCountMap.put(assignor,currentPatents.size());
                         }
+                        System.out.println("Adding "+currentPatents.size()+ " assets sold to assignor: "+assignor;
                     });
                 }
                 List<String> dupAssignees = new ArrayList<>(currentAssignees.size());
                 dupAssignees.addAll(currentAssignees);
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
+                    if(patent.startsWith("0"))patent.replaceFirst("0","");
                     if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
                         try {
                             if(Integer.valueOf(patent) >= 7000000) {
@@ -156,8 +159,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         } catch (NumberFormatException nfe) {
                             // not a utility patent
                         }
-                    } else {
-                        System.out.println(patent + " does not exist in database");
                     }
                 }
             }
