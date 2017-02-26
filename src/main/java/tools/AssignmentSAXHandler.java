@@ -194,7 +194,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
         if(inPatentAssignment&&qName.equals("document-id")){
             inDocumentID=false;
             if(docKind!=null&&docKind.startsWith("B")) {
-                System.out.println("Adding patent: "        +currentPatent);
                 currentPatents.add(currentPatent);
             }
             docKind=null;
