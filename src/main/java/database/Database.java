@@ -696,7 +696,7 @@ public class Database {
         int lastIngestedDate = startDateNum;
         System.out.println("Starting with date: " + lastIngestedDate);
         System.out.println("Ending with date: " + endDateInt);
-        String base_url = "http://patents.reedtech.com/downloads/PatentAssignmentText/?/ad20";
+        String base_url = "http://patents.reedtech.com/downloads/PatentAssignmentText/---/ad20";
         while (lastIngestedDate <= endDateInt||backYearDates.size()>0) {
             String finalUrlString;
             if(backYearDates.isEmpty()) {
@@ -709,10 +709,10 @@ public class Database {
                     lastIngestedDate = lastIngestedDate + 10000 - (lastIngestedDate % 10000);
                 }
                 finalUrlString=base_url + String.format("%06d", lastIngestedDate) + ".zip";
-                finalUrlString=finalUrlString.replace("\\?","20"+String.format("%02d",lastIngestedDate/10000));
+                finalUrlString=finalUrlString.replace("---","20"+String.format("%02d",lastIngestedDate/10000));
             } else {
                 finalUrlString=base_url + backYearDates.remove(0) + ".zip";
-                finalUrlString=finalUrlString.replace("\\?","1980-2015");
+                finalUrlString=finalUrlString.replaceFirst("---","1980-2015");
             }
 
             try {
