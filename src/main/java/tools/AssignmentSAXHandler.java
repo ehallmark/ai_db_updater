@@ -11,6 +11,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
 
@@ -19,6 +20,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private boolean inPatentAssignment = false;
     private boolean isConveyanceText=false;
     private boolean inPatentAssignee=false;
+    private boolean isDocKind = false;
     private boolean isName=false;
     private boolean inDocumentID=false;
     private boolean isDocNumber=false;
@@ -29,7 +31,8 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private List<String> currentPatents = new ArrayList<>();
     private List<String> currentAssignees = new ArrayList<>();
     private List<String> currentAssignors = new ArrayList();
-
+    private String docKind=null;
+    private String currentPatent = null;
     private static File patentToAssigneeMapFile = new File("patent_to_assignee_map_latest.jobj");
     private static Map<String,List<String>> patentToAssigneeMap;
     private static Map<String,Integer> assigneeToAssetsSoldCountMap = Collections.synchronizedMap(new HashMap<>());
@@ -71,9 +74,12 @@ public class AssignmentSAXHandler extends DefaultHandler{
         inPatentAssignment=false;
         isConveyanceText=false;
         inPatentAssignee=false;
+        currentPatent=null;
+        docKind=null;
         isDocNumber=false;
         inDocumentID=false;
         inPatentAssignor=false;
+        isDocKind=false;
         isName=false;
         shouldTerminate = false;
         currentAssignors.clear();
@@ -99,6 +105,9 @@ public class AssignmentSAXHandler extends DefaultHandler{
 
         if(inPatentAssignment&&qName.equals("document-id")){
             inDocumentID=true;
+        }
+        if(inDocumentID&&qName.equals("kind")){
+            isDocKind=true;
         }
 
         if(inDocumentID&&qName.equals("doc-number")) {
@@ -128,26 +137,9 @@ public class AssignmentSAXHandler extends DefaultHandler{
             inPatentAssignment=false;
             // done with patent so update patent map and reset data
             if(!shouldTerminate&&!currentAssignees.isEmpty()) {
-                if(currentPatents.size()>0 && isAssignorsInterest) {
-                    currentAssignees.forEach(assignee->{
-                        if(assigneeToAssetsPurchasedCountMap.containsKey(assignee)) {
-                            assigneeToAssetsPurchasedCountMap.put(assignee,assigneeToAssetsPurchasedCountMap.get(assignee)+currentPatents.size());
-                        } else {
-                            assigneeToAssetsPurchasedCountMap.put(assignee,currentPatents.size());
-                        }
-                        System.out.println("Adding "+currentPatents.size()+ " assets sold to assignee: "+assignee);
-                    });
-                    currentAssignors.forEach(assignor->{
-                        if(assigneeToAssetsSoldCountMap.containsKey(assignor)) {
-                            assigneeToAssetsSoldCountMap.put(assignor,assigneeToAssetsSoldCountMap.get(assignor)+currentPatents.size());
-                        } else {
-                            assigneeToAssetsSoldCountMap.put(assignor,currentPatents.size());
-                        }
-                        System.out.println("Adding "+currentPatents.size()+ " assets sold to assignor: "+assignor);
-                    });
-                }
                 List<String> dupAssignees = new ArrayList<>(currentAssignees.size());
                 dupAssignees.addAll(currentAssignees);
+                AtomicInteger patentCount = new AtomicInteger(0);
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
                     if(patent.startsWith("0"))patent.replaceFirst("0","");
@@ -155,11 +147,30 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         try {
                             if(Integer.valueOf(patent) >= 7000000) {
                                 patentToAssigneeMap.put(patent, dupAssignees);
+                                patentCount.getAndIncrement();
                             }
                         } catch (NumberFormatException nfe) {
                             // not a utility patent
                         }
                     }
+                }
+                if(patentCount.get()>0 && isAssignorsInterest) {
+                    currentAssignees.forEach(assignee->{
+                        if(assigneeToAssetsPurchasedCountMap.containsKey(assignee)) {
+                            assigneeToAssetsPurchasedCountMap.put(assignee,assigneeToAssetsPurchasedCountMap.get(assignee)+patentCount.get());
+                        } else {
+                            assigneeToAssetsPurchasedCountMap.put(assignee,patentCount.get());
+                        }
+                        System.out.println("Adding "+patentCount.get()+ " assets sold to assignee: "+assignee);
+                    });
+                    currentAssignors.forEach(assignor->{
+                        if(assigneeToAssetsSoldCountMap.containsKey(assignor)) {
+                            assigneeToAssetsSoldCountMap.put(assignor,assigneeToAssetsSoldCountMap.get(assignor)+patentCount.get());
+                        } else {
+                            assigneeToAssetsSoldCountMap.put(assignor,patentCount.get());
+                        }
+                        System.out.println("Adding "+patentCount.get()+ " assets sold to assignor: "+assignor);
+                    });
                 }
             }
             reset();
@@ -182,12 +193,16 @@ public class AssignmentSAXHandler extends DefaultHandler{
 
         if(inPatentAssignment&&qName.equals("document-id")){
             inDocumentID=false;
+            if(docKind!=null&&docKind.startsWith("B")) {
+                currentPatents.add(currentPatent);
+            }
+            docKind=null;
+            currentPatent=null;
         }
 
         if(inDocumentID&&qName.equals("doc-number")) {
             isDocNumber = false;
-            String text = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
-            currentPatents.add(text);
+            currentPatent = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
             documentPieces.clear();
 
         }
@@ -218,6 +233,14 @@ public class AssignmentSAXHandler extends DefaultHandler{
             documentPieces.clear();
         }
 
+        if(inDocumentID&&qName.equals("kind")){
+            String text = (String.join("",documentPieces)).trim().toUpperCase();
+            if(text!=null&&text.length()>0) {
+                docKind=text;
+            }
+            isDocKind=false;
+        }
+
     }
 
     public void characters(char ch[],int start,int length)throws SAXException{
@@ -228,7 +251,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
         //    bfname = false;
         // }
 
-        if((!shouldTerminate)&&(isName||isDocNumber||isConveyanceText)){
+        if((!shouldTerminate)&&(isName||isDocNumber||isDocKind||isConveyanceText)){
             documentPieces.add(new String(ch,start,length));
         }
 
