@@ -4,6 +4,7 @@ package main.java.tools;
  * Created by ehallmark on 1/3/17.
  */
 
+import main.java.database.Database;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -21,13 +22,20 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private boolean isName=false;
     private boolean inDocumentID=false;
     private boolean isDocNumber=false;
+    private boolean inPatentAssignor=false;
+    private boolean isAssignorsInterest=false;
     boolean shouldTerminate = false;
     private List<String>documentPieces=new ArrayList<>();
     private List<String> currentPatents = new ArrayList<>();
     private List<String> currentAssignees = new ArrayList<>();
+    private List<String> currentAssignors = new ArrayList();
 
     private static File patentToAssigneeMapFile = new File("patent_to_assignee_map_latest.jobj");
     private static Map<String,List<String>> patentToAssigneeMap;
+    private static Map<String,Integer> assigneeToAssetsSoldCountMap = Collections.synchronizedMap(new HashMap<>());
+    private static Map<String,Integer> assigneeToAssetsPurchasedCountMap = Collections.synchronizedMap(new HashMap<>());
+    private static final File assigneeToAssetsSoldCountMapFile = new File("assignee_to_assets_sold_count_map.jobj");
+    private static final File assigneeToAssetsPurchasedCountMapFile = new File("assignee_to_assets_purchased_count_map.jobj");
 
     static {
         try {
@@ -49,6 +57,8 @@ public class AssignmentSAXHandler extends DefaultHandler{
     }
 
     public static void save() throws IOException {
+        Database.saveObject(assigneeToAssetsSoldCountMap,assigneeToAssetsSoldCountMapFile);
+        Database.saveObject(assigneeToAssetsPurchasedCountMap,assigneeToAssetsPurchasedCountMapFile);
         if(patentToAssigneeMap==null) return;
         ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(patentToAssigneeMapFile)));
         oos.writeObject(patentToAssigneeMap);
@@ -63,9 +73,12 @@ public class AssignmentSAXHandler extends DefaultHandler{
         inPatentAssignee=false;
         isDocNumber=false;
         inDocumentID=false;
+        inPatentAssignor=false;
         isName=false;
         shouldTerminate = false;
+        currentAssignors.clear();
         currentAssignees.clear();
+        isAssignorsInterest=false;
         currentPatents.clear();
         documentPieces.clear();
     }
@@ -96,6 +109,10 @@ public class AssignmentSAXHandler extends DefaultHandler{
             inPatentAssignee=true;
         }
 
+        if(inPatentAssignment&&qName.equals("patent-assignor")) {
+            inPatentAssignor=true;
+        }
+
         if(inPatentAssignee&&qName.equals("name")) {
             isName=true;
         }
@@ -111,6 +128,22 @@ public class AssignmentSAXHandler extends DefaultHandler{
             inPatentAssignment=false;
             // done with patent so update patent map and reset data
             if(!shouldTerminate&&!currentAssignees.isEmpty()) {
+                if(currentPatents.size()>0 && isAssignorsInterest) {
+                    currentAssignees.forEach(assignee->{
+                        if(assigneeToAssetsPurchasedCountMap.containsKey(assignee)) {
+                            assigneeToAssetsPurchasedCountMap.put(assignee,assigneeToAssetsPurchasedCountMap.get(assignee)+currentPatents.size());
+                        } else {
+                            assigneeToAssetsPurchasedCountMap.put(assignee,currentPatents.size());
+                        }
+                    });
+                    currentAssignors.forEach(assignor->{
+                        if(assigneeToAssetsSoldCountMap.containsKey(assignor)) {
+                            assigneeToAssetsSoldCountMap.put(assignor,assigneeToAssetsSoldCountMap.get(assignor)+currentPatents.size());
+                        } else {
+                            assigneeToAssetsSoldCountMap.put(assignor,currentPatents.size());
+                        }
+                    });
+                }
                 List<String> dupAssignees = new ArrayList<>(currentAssignees.size());
                 dupAssignees.addAll(currentAssignees);
                 for(int i = 0; i < currentPatents.size(); i++) {
@@ -135,7 +168,10 @@ public class AssignmentSAXHandler extends DefaultHandler{
             isConveyanceText=false;
             String text = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
             boolean changeOfNameOrAssignorsInterest = false;
-            if(text.startsWith("ASSIGNMENT OF ASSIGN")) changeOfNameOrAssignorsInterest=true;
+            if(text.startsWith("ASSIGNMENT OF ASSIGN")) {
+                isAssignorsInterest=true;
+                changeOfNameOrAssignorsInterest=true;
+            }
             if(text.startsWith("CHANGE OF NAME")) changeOfNameOrAssignorsInterest=true;
             if(text==null||text.length()==0||!changeOfNameOrAssignorsInterest) {
                 shouldTerminate = true;
@@ -157,6 +193,19 @@ public class AssignmentSAXHandler extends DefaultHandler{
 
         if(inPatentAssignment&&qName.equals("patent-assignee")) {
             inPatentAssignee=false;
+        }
+
+        if(inPatentAssignment&&qName.equals("patent-assignor")) {
+            inPatentAssignor=false;
+        }
+
+        if(inPatentAssignor&&qName.equals("name")) {
+            isName=false;
+            String text = AssigneeTrimmer.standardizedAssignee(String.join("",documentPieces));
+            if(text!=null&&text.length()>0) {
+                currentAssignors.add(text);
+            }
+            documentPieces.clear();
         }
 
         if(inPatentAssignee&&qName.equals("name")) {
