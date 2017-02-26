@@ -113,7 +113,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
             inPatentAssignor=true;
         }
 
-        if(inPatentAssignee&&qName.equals("name")) {
+        if((inPatentAssignee||inPatentAssignor)&&qName.equals("name")) {
             isName=true;
         }
     }

@@ -687,18 +687,24 @@ public class Database {
         final int backYearDataDate = 151231;
         final int numFilesForBackYearData = 14;
         final int backYearDataStartNum = 1;
-        final int startDateNum = 160000;
+        final int startDateNum = 160101;
 
         List<String> backYearDates = new ArrayList<>(numFilesForBackYearData);
         for(int i = backYearDataStartNum; i < backYearDataStartNum + numFilesForBackYearData; i++) {
             backYearDates.add(String.format("%06d", backYearDataDate)+"-"+String.format("%02d", i));
         }
+
         int lastIngestedDate = startDateNum;
         System.out.println("Starting with date: " + lastIngestedDate);
         System.out.println("Ending with date: " + endDateInt);
         String base_url = "http://patents.reedtech.com/downloads/PatentAssignmentText/---/ad20";
         while (lastIngestedDate <= endDateInt||backYearDates.size()>0) {
             String finalUrlString;
+            { //test!!!
+                finalUrlString = base_url + String.format("%06d", lastIngestedDate) + ".zip";
+                finalUrlString = finalUrlString.replace("---", "20" + String.format("%02d", lastIngestedDate / 10000));
+                System.out.println(finalUrlString);
+            }// end test!!
             if(backYearDates.isEmpty()) {
                 lastIngestedDate = lastIngestedDate + 1;
                 // don't over search days
