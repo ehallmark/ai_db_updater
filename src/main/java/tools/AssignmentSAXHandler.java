@@ -161,7 +161,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         } else {
                             assigneeToAssetsPurchasedCountMap.put(assignee,patentCount.get());
                         }
-                        System.out.println("Adding "+patentCount.get()+ " assets sold to assignee: "+assignee);
+                        System.out.println("Adding "+patentCount.get()+ " assets purchased to assignee: "+assignee);
                     });
                     currentAssignors.forEach(assignor->{
                         if(assigneeToAssetsSoldCountMap.containsKey(assignor)) {
