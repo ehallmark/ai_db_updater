@@ -194,6 +194,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
         if(inPatentAssignment&&qName.equals("document-id")){
             inDocumentID=false;
             if(docKind!=null&&docKind.startsWith("B")) {
+                System.out.println("Adding patent: "        +currentPatent);
                 currentPatents.add(currentPatent);
             }
             docKind=null;
@@ -234,11 +235,12 @@ public class AssignmentSAXHandler extends DefaultHandler{
         }
 
         if(inDocumentID&&qName.equals("kind")){
+            isDocKind=false;
             String text = (String.join("",documentPieces)).trim().toUpperCase();
             if(text!=null&&text.length()>0) {
                 docKind=text;
             }
-            isDocKind=false;
+            documentPieces.clear();
         }
 
     }
