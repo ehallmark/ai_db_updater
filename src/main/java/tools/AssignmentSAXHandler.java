@@ -66,6 +66,8 @@ public class AssignmentSAXHandler extends DefaultHandler{
     public static void save() throws IOException {
         Database.saveObject(assigneeToAssetsSoldCountMap,assigneeToAssetsSoldCountMapFile);
         Database.saveObject(assigneeToAssetsPurchasedCountMap,assigneeToAssetsPurchasedCountMapFile);
+        Database.saveObject(avayaToAssetsPurchasedMap,new File("avayaToAssetsPurchasedMap.jobj"));
+        Database.saveObject(avayaToAssetsSoldMap,new File("avayaToAssetsSoldMap.jobj"));
         Database.saveObject(avayaToAssetsPurchasedMap,avayaToAssetsPurchasedMapFile);
         Database.saveObject(avayaToAssetsSoldMap,avayaToAssetsSoldMapFile);
         if(patentToAssigneeMap==null) return;
