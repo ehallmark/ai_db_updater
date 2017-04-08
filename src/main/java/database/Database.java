@@ -700,11 +700,6 @@ public class Database {
         String base_url = "http://patents.reedtech.com/downloads/PatentAssignmentText/---/ad20";
         while (lastIngestedDate <= endDateInt||backYearDates.size()>0) {
             String finalUrlString;
-            { //test!!!
-                finalUrlString = base_url + String.format("%06d", lastIngestedDate) + ".zip";
-                finalUrlString = finalUrlString.replace("---", "20" + String.format("%02d", lastIngestedDate / 10000));
-                System.out.println(finalUrlString);
-            }// end test!!
             if(backYearDates.isEmpty()) {
                 lastIngestedDate = lastIngestedDate + 1;
                 // don't over search days
