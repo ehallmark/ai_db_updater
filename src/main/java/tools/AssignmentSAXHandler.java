@@ -41,8 +41,8 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private static final File assigneeToAssetsPurchasedCountMapFile = new File("assignee_to_assets_purchased_count_map.jobj");
     private static Set<String> avayaToAssetsSoldMap = Collections.synchronizedSet(new HashSet<>());
     private static Set<String> avayaToAssetsPurchasedMap = Collections.synchronizedSet(new HashSet<>());
-    private static final File avayaToAssetsSoldMapFile = new File("/home/ehallmark1122/machine_learning_cloud/data/avayaToAssetsSoldMap.jobj");
-    private static final File avayaToAssetsPurchasedMapFile = new File("/home/ehallmark1122/machine_learning_cloud/data/avayaToAssetsPurchasedMap.jobj");
+    public static final File avayaToAssetsSoldMapFile = new File("/home/ehallmark1122/machine_learning_cloud/data/avayaToAssetsSoldMap.jobj");
+    public static final File avayaToAssetsPurchasedMapFile = new File("/home/ehallmark1122/machine_learning_cloud/data/avayaToAssetsPurchasedMap.jobj");
 
     static {
         try {
