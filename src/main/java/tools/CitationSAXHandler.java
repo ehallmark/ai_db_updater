@@ -141,7 +141,7 @@ public class CitationSAXHandler extends DefaultHandler{
             pubDocNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(pubDocNumber.startsWith("0"))pubDocNumber = pubDocNumber.substring(1,pubDocNumber.length());
 
-            if(pubDocNumber.replaceAll("[^0-9]","").length()!=pubDocNumber.length()) {
+            if(pubDocNumber.replaceAll("[^0-9]","").length()!=pubDocNumber.length() || (pubDocNumber.length()!=7 && pubDocNumber.length()!=8)) {
                 pubDocNumber=null;
                 shouldTerminate = true;
             }
@@ -194,8 +194,7 @@ public class CitationSAXHandler extends DefaultHandler{
             isCitedDocNumber=false;
             String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
-
-            if(docNumber.replaceAll("[^0-9]","").length()==docNumber.length()) {
+            if(docNumber.replaceAll("[^0-9]","").length()==docNumber.length() && (docNumber.length()==7||docNumber.length()==8)) {
                 citedDocuments.add(docNumber);
             }
             documentPieces.clear();
@@ -206,7 +205,7 @@ public class CitationSAXHandler extends DefaultHandler{
             String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
 
-            if(docNumber.replaceAll("[^0-9]","").length()==docNumber.length()) {
+            if(docNumber.replaceAll("[^0-9]","").length()==docNumber.length() && (docNumber.length()==7||docNumber.length()==8)) {
                 relatedDocuments.add(docNumber);
             }
             documentPieces.clear();

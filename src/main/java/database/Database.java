@@ -114,7 +114,7 @@ public class Database {
         Map<String,String> patentToInventionTitleMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,List<String>> patentToOriginalAssigneeMap = Collections.synchronizedMap(new HashMap<>());
         List<RecursiveAction> tasks = new ArrayList<>();
-        Integer lastIngestedDate = 70000;
+        Integer lastIngestedDate = 60000;
         LocalDate date = LocalDate.now();
         String endDateStr = String.valueOf(date.getYear()).substring(2,4)+String.format("%02d",date.getMonthValue())+String.format("%02d",date.getDayOfMonth());
         Integer endDateInt = Integer.valueOf(endDateStr);
@@ -219,16 +219,14 @@ public class Database {
                                     saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
                                     String patNum = handler.getPatentNumber();
                                     try {
-                                        if (Integer.valueOf(patNum) >= 7000000) {
-                                            if (patNum != null&&handler.getInventionTitle()!=null) {
-                                                System.out.println(patNum + " has title: " + handler.getInventionTitle());
-                                                patentToInventionTitleMap.put(handler.getPatentNumber(), handler.getInventionTitle());
-                                            }
-                                            if(patNum!=null && !handler.getOriginalAssignees().isEmpty()) {
-                                                List<String> cloneAssignees = new ArrayList<>(handler.getOriginalAssignees().size());
-                                                cloneAssignees.addAll(handler.getOriginalAssignees());
-                                                patentToOriginalAssigneeMap.put(handler.getPatentNumber(),cloneAssignees);
-                                            }
+                                        if (patNum != null&&handler.getInventionTitle()!=null) {
+                                            System.out.println(patNum + " has title: " + handler.getInventionTitle());
+                                            patentToInventionTitleMap.put(handler.getPatentNumber(), handler.getInventionTitle());
+                                        }
+                                        if(patNum!=null && !handler.getOriginalAssignees().isEmpty()) {
+                                            List<String> cloneAssignees = new ArrayList<>(handler.getOriginalAssignees().size());
+                                            cloneAssignees.addAll(handler.getOriginalAssignees());
+                                            patentToOriginalAssigneeMap.put(handler.getPatentNumber(),cloneAssignees);
                                         }
                                     } catch (Exception nfe) {
                                         // not a utility patent
@@ -250,16 +248,14 @@ public class Database {
 
                                 String patNum = handler.getPatentNumber();
                                 try {
-                                    if (Integer.valueOf(patNum) >= 7000000) {
-                                        if (patNum != null&&handler.getInventionTitle()!=null) {
-                                            System.out.println(patNum + " has title: " + handler.getInventionTitle());
-                                            patentToInventionTitleMap.put(handler.getPatentNumber(), handler.getInventionTitle());
-                                        }
-                                        if(patNum!=null && !handler.getOriginalAssignees().isEmpty()) {
-                                            List<String> cloneAssignees = new ArrayList<>(handler.getOriginalAssignees().size());
-                                            cloneAssignees.addAll(handler.getOriginalAssignees());
-                                            patentToOriginalAssigneeMap.put(handler.getPatentNumber(),cloneAssignees);
-                                        }
+                                    if (patNum != null&&handler.getInventionTitle()!=null) {
+                                        System.out.println(patNum + " has title: " + handler.getInventionTitle());
+                                        patentToInventionTitleMap.put(handler.getPatentNumber(), handler.getInventionTitle());
+                                    }
+                                    if(patNum!=null && !handler.getOriginalAssignees().isEmpty()) {
+                                        List<String> cloneAssignees = new ArrayList<>(handler.getOriginalAssignees().size());
+                                        cloneAssignees.addAll(handler.getOriginalAssignees());
+                                        patentToOriginalAssigneeMap.put(handler.getPatentNumber(),cloneAssignees);
                                     }
                                 } catch (Exception nfe) {
                                     // not a utility patent
@@ -310,7 +306,7 @@ public class Database {
         Map<String,LocalDate> patentToPriorityDateMap = Collections.synchronizedMap(new HashMap<>());
         Set<String> lapsedPatentsSet = Collections.synchronizedSet(new HashSet<>());
         List<RecursiveAction> tasks = new ArrayList<>();
-        Integer lastIngestedDate = 70000;
+        Integer lastIngestedDate = 60000;
         LocalDate date = LocalDate.now();
         String endDateStr = String.valueOf(date.getYear()).substring(2,4)+String.format("%02d",date.getMonthValue())+String.format("%02d",date.getDayOfMonth());
         Integer endDateInt = Integer.valueOf(endDateStr);
@@ -415,32 +411,30 @@ public class Database {
                                     saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
                                     String patNum = handler.getPatentNumber();
                                     try {
-                                        if (patNum!=null&&Integer.valueOf(patNum) >= 7000000) {
-                                            allPatents.add(patNum);
-                                            if (handler.getPubDate()!=null) {
-                                                patentToPubDateMap.put(patNum, handler.getPubDate());
+                                        allPatents.add(patNum);
+                                        if (handler.getPubDate()!=null) {
+                                            patentToPubDateMap.put(patNum, handler.getPubDate());
+                                        }
+                                        if(handler.getAppDate()!=null) {
+                                            patentToAppDateMap.put(patNum, handler.getAppDate());
+                                        }
+                                        if(handler.getPriorityDate()!=null) {
+                                            patentToPriorityDateMap.put(patNum,handler.getPriorityDate());
+                                            LocalDate date = handler.getPriorityDate();
+                                            if(date.plusYears(20).isBefore(LocalDate.now())) {
+                                                System.out.println(patNum + " isExpired!");
+                                                lapsedPatentsSet.add(patNum);
                                             }
-                                            if(handler.getAppDate()!=null) {
-                                                patentToAppDateMap.put(patNum, handler.getAppDate());
-                                            }
-                                            if(handler.getPriorityDate()!=null) {
-                                                patentToPriorityDateMap.put(patNum,handler.getPriorityDate());
-                                                LocalDate date = handler.getPriorityDate();
-                                                if(date.plusYears(20).isBefore(LocalDate.now())) {
-                                                    System.out.println(patNum + " isExpired!");
-                                                    lapsedPatentsSet.add(patNum);
-                                                }
-                                            }
-                                            Set<String> cited = handler.getCitedDocuments();
-                                            if(!cited.isEmpty()) {
-                                                //System.out.println(patNum+" has "+cited.size()+" cited documents");
-                                                patentToCitedPatentsMap.put(patNum, cited);
-                                            }
-                                            Set<String> related = handler.getRelatedDocuments();
-                                            if(!related.isEmpty()) {
-                                                //System.out.println(patNum+ " has "+related.size()+" related documents");
-                                                patentToRelatedDocMap.put(patNum,cited);
-                                            }
+                                        }
+                                        Set<String> cited = handler.getCitedDocuments();
+                                        if(!cited.isEmpty()) {
+                                            //System.out.println(patNum+" has "+cited.size()+" cited documents");
+                                            patentToCitedPatentsMap.put(patNum, cited);
+                                        }
+                                        Set<String> related = handler.getRelatedDocuments();
+                                        if(!related.isEmpty()) {
+                                            //System.out.println(patNum+ " has "+related.size()+" related documents");
+                                            patentToRelatedDocMap.put(patNum, cited);
                                         }
                                     } catch (Exception nfe) {
                                         // not a utility patent
@@ -462,31 +456,29 @@ public class Database {
 
                                 String patNum = handler.getPatentNumber();
                                 try {
-                                    if (patNum!=null&&Integer.valueOf(patNum) >= 7000000) {
-                                        if (handler.getPubDate()!=null) {
-                                            System.out.println(patNum + " has pubDate: " + handler.getPubDate());
-                                            patentToPubDateMap.put(patNum, handler.getPubDate());
+                                    if (handler.getPubDate()!=null) {
+                                        System.out.println(patNum + " has pubDate: " + handler.getPubDate());
+                                        patentToPubDateMap.put(patNum, handler.getPubDate());
+                                    }
+                                    if(handler.getAppDate()!=null) {
+                                        patentToAppDateMap.put(patNum, handler.getAppDate());
+                                    }
+                                    if(handler.getPriorityDate()!=null) {
+                                        patentToPriorityDateMap.put(patNum,handler.getPriorityDate());
+                                        LocalDate date = handler.getPriorityDate();
+                                        if(date.plusYears(20).isBefore(LocalDate.now())) {
+                                            lapsedPatentsSet.add(patNum);
                                         }
-                                        if(handler.getAppDate()!=null) {
-                                            patentToAppDateMap.put(patNum, handler.getAppDate());
-                                        }
-                                        if(handler.getPriorityDate()!=null) {
-                                            patentToPriorityDateMap.put(patNum,handler.getPriorityDate());
-                                            LocalDate date = handler.getPriorityDate();
-                                            if(date.plusYears(20).isBefore(LocalDate.now())) {
-                                                lapsedPatentsSet.add(patNum);
-                                            }
-                                        }
-                                        Set<String> cited = handler.getCitedDocuments();
-                                        if(!cited.isEmpty()) {
-                                            System.out.println(patNum+" has "+cited.size()+" cited documents");
-                                            patentToCitedPatentsMap.put(patNum, cited);
-                                        }
-                                        Set<String> related = handler.getRelatedDocuments();
-                                        if(!related.isEmpty()) {
-                                            System.out.println(patNum+ " has "+related.size()+" related documents");
-                                            patentToRelatedDocMap.put(patNum,cited);
-                                        }
+                                    }
+                                    Set<String> cited = handler.getCitedDocuments();
+                                    if(!cited.isEmpty()) {
+                                        System.out.println(patNum+" has "+cited.size()+" cited documents");
+                                        patentToCitedPatentsMap.put(patNum, cited);
+                                    }
+                                    Set<String> related = handler.getRelatedDocuments();
+                                    if(!related.isEmpty()) {
+                                        System.out.println(patNum+ " has "+related.size()+" related documents");
+                                        patentToRelatedDocMap.put(patNum,cited);
                                     }
                                 } catch (Exception nfe) {
                                     // not a utility patent
@@ -599,38 +591,36 @@ public class Database {
                     if (line.length() >= 50) {
                         String patNum = line.substring(0, 7);
                         try {
-                            if (Integer.valueOf(patNum) >= 7000000) {
-                                String maintenanceCode = line.substring(46, 51).trim();
-                                if (patNum != null && maintenanceCode != null ) {
-                                    if(maintenanceCode.equals("EXP.")) {
-                                        System.out.println(patNum + " has expired... Updating database now.");
-                                        expiredPatentsSet.add(patNum);
-                                    } else if (maintenanceCode.equals("EXPX")) {
-                                        // reinstated
-                                        System.out.println(patNum+" was reinstated!");
-                                        if(expiredPatentsSet.contains(patNum)) {
-                                            expiredPatentsSet.remove(patNum);
-                                        }
-                                    } else if (maintenanceCode.equals("REM.")) {
-                                        // reminder
-                                        if(patentToMaintenanceFeeReminderCount.containsKey(patNum)) {
-                                            patentToMaintenanceFeeReminderCount.put(patNum,patentToMaintenanceFeeReminderCount.get(patNum)+1);
-                                        } else {
-                                            patentToMaintenanceFeeReminderCount.put(patNum,1);
-                                        }
-                                    } else if (maintenanceCode.startsWith("M2")||maintenanceCode.startsWith("SM")||maintenanceCode.equals("LTOS")||maintenanceCode.equals("MTOS")) {
-                                        smallEntityPatents.add(patNum);
-                                        if(largeEntityPatents.contains(patNum)) largeEntityPatents.remove(patNum);
-                                        if(microEntityPatents.contains(patNum)) microEntityPatents.remove(patNum);
-                                    } else if (maintenanceCode.startsWith("M1")||maintenanceCode.startsWith("LSM")) {
-                                        largeEntityPatents.add(patNum);
-                                        if(smallEntityPatents.contains(patNum)) smallEntityPatents.remove(patNum);
-                                        if(microEntityPatents.contains(patNum)) microEntityPatents.remove(patNum);
-                                    } else if(maintenanceCode.startsWith("M3")||maintenanceCode.equals("STOM")) {
-                                        microEntityPatents.add(patNum);
-                                        if(largeEntityPatents.contains(patNum)) largeEntityPatents.remove(patNum);
-                                        if(smallEntityPatents.contains(patNum)) smallEntityPatents.remove(patNum);
+                            String maintenanceCode = line.substring(46, 51).trim();
+                            if (patNum != null && maintenanceCode != null ) {
+                                if(maintenanceCode.equals("EXP.")) {
+                                    System.out.println(patNum + " has expired... Updating database now.");
+                                    expiredPatentsSet.add(patNum);
+                                } else if (maintenanceCode.equals("EXPX")) {
+                                    // reinstated
+                                    System.out.println(patNum+" was reinstated!");
+                                    if(expiredPatentsSet.contains(patNum)) {
+                                        expiredPatentsSet.remove(patNum);
                                     }
+                                } else if (maintenanceCode.equals("REM.")) {
+                                    // reminder
+                                    if(patentToMaintenanceFeeReminderCount.containsKey(patNum)) {
+                                        patentToMaintenanceFeeReminderCount.put(patNum,patentToMaintenanceFeeReminderCount.get(patNum)+1);
+                                    } else {
+                                        patentToMaintenanceFeeReminderCount.put(patNum,1);
+                                    }
+                                } else if (maintenanceCode.startsWith("M2")||maintenanceCode.startsWith("SM")||maintenanceCode.equals("LTOS")||maintenanceCode.equals("MTOS")) {
+                                    smallEntityPatents.add(patNum);
+                                    if(largeEntityPatents.contains(patNum)) largeEntityPatents.remove(patNum);
+                                    if(microEntityPatents.contains(patNum)) microEntityPatents.remove(patNum);
+                                } else if (maintenanceCode.startsWith("M1")||maintenanceCode.startsWith("LSM")) {
+                                    largeEntityPatents.add(patNum);
+                                    if(smallEntityPatents.contains(patNum)) smallEntityPatents.remove(patNum);
+                                    if(microEntityPatents.contains(patNum)) microEntityPatents.remove(patNum);
+                                } else if(maintenanceCode.startsWith("M3")||maintenanceCode.equals("STOM")) {
+                                    microEntityPatents.add(patNum);
+                                    if(largeEntityPatents.contains(patNum)) largeEntityPatents.remove(patNum);
+                                    if(smallEntityPatents.contains(patNum)) smallEntityPatents.remove(patNum);
                                 }
                             }
                         } catch (NumberFormatException nfe) {
