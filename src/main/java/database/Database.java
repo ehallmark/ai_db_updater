@@ -422,7 +422,6 @@ public class Database {
                                             patentToPriorityDateMap.put(patNum,handler.getPriorityDate());
                                             LocalDate date = handler.getPriorityDate();
                                             if(date.plusYears(20).isBefore(LocalDate.now())) {
-                                                System.out.println(patNum + " isExpired!");
                                                 lapsedPatentsSet.add(patNum);
                                             }
                                         }
@@ -457,7 +456,6 @@ public class Database {
                                 String patNum = handler.getPatentNumber();
                                 try {
                                     if (handler.getPubDate()!=null) {
-                                        System.out.println(patNum + " has pubDate: " + handler.getPubDate());
                                         patentToPubDateMap.put(patNum, handler.getPubDate());
                                     }
                                     if(handler.getAppDate()!=null) {
@@ -472,12 +470,10 @@ public class Database {
                                     }
                                     Set<String> cited = handler.getCitedDocuments();
                                     if(!cited.isEmpty()) {
-                                        System.out.println(patNum+" has "+cited.size()+" cited documents");
                                         patentToCitedPatentsMap.put(patNum, cited);
                                     }
                                     Set<String> related = handler.getRelatedDocuments();
                                     if(!related.isEmpty()) {
-                                        System.out.println(patNum+ " has "+related.size()+" related documents");
                                         patentToRelatedDocMap.put(patNum,cited);
                                     }
                                 } catch (Exception nfe) {

@@ -39,10 +39,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private static Map<String,Integer> assigneeToAssetsPurchasedCountMap = Collections.synchronizedMap(new HashMap<>());
     private static final File assigneeToAssetsSoldCountMapFile = new File("assignee_to_assets_sold_count_map.jobj");
     private static final File assigneeToAssetsPurchasedCountMapFile = new File("assignee_to_assets_purchased_count_map.jobj");
-    private static Set<String> avayaToAssetsSoldMap = Collections.synchronizedSet(new HashSet<>());
-    private static Set<String> avayaToAssetsPurchasedMap = Collections.synchronizedSet(new HashSet<>());
-    public static final File avayaToAssetsSoldMapFile = new File("/home/ehallmark1122/machine_learning_cloud/data/avayaToAssetsSoldMap.jobj");
-    public static final File avayaToAssetsPurchasedMapFile = new File("/home/ehallmark1122/machine_learning_cloud/data/avayaToAssetsPurchasedMap.jobj");
 
     static {
         try {
@@ -66,10 +62,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
     public static void save() throws IOException {
         Database.saveObject(assigneeToAssetsSoldCountMap,assigneeToAssetsSoldCountMapFile);
         Database.saveObject(assigneeToAssetsPurchasedCountMap,assigneeToAssetsPurchasedCountMapFile);
-        Database.saveObject(avayaToAssetsPurchasedMap,new File("avayaToAssetsPurchasedMap.jobj"));
-        Database.saveObject(avayaToAssetsSoldMap,new File("avayaToAssetsSoldMap.jobj"));
-        Database.saveObject(avayaToAssetsPurchasedMap,avayaToAssetsPurchasedMapFile);
-        Database.saveObject(avayaToAssetsSoldMap,avayaToAssetsSoldMapFile);
         if(patentToAssigneeMap==null) return;
         ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(patentToAssigneeMapFile)));
         oos.writeObject(patentToAssigneeMap);
@@ -152,13 +144,12 @@ public class AssignmentSAXHandler extends DefaultHandler{
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
                     if(patent.startsWith("0"))patent=patent.replaceFirst("0","");
-                    if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
+                    if(patent!=null&&(patent.length()==7||patent.length()==8)&&patent.replaceAll("[^0-9]","").length()==patent.length()) {
                         try {
-                            if(Integer.valueOf(patent) >= 7000000) {
-                                patentToAssigneeMap.put(patent, dupAssignees);
-                                patents.add(patent);
-                                patentCount.getAndIncrement();
-                            }
+                            patentToAssigneeMap.put(patent, dupAssignees);
+                            patents.add(patent);
+                            patentCount.getAndIncrement();
+
                         } catch (NumberFormatException nfe) {
                             // not a utility patent
                         }
@@ -166,9 +157,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
                 }
                 if(patentCount.get()>0 && isAssignorsInterest) {
                     currentAssignees.forEach(assignee->{
-                        if(assignee.startsWith("AVAYA")) {
-                            avayaToAssetsPurchasedMap.addAll(patents);
-                        }
                         if(assigneeToAssetsPurchasedCountMap.containsKey(assignee)) {
                             assigneeToAssetsPurchasedCountMap.put(assignee,assigneeToAssetsPurchasedCountMap.get(assignee)+patentCount.get());
                         } else {
@@ -177,9 +165,6 @@ public class AssignmentSAXHandler extends DefaultHandler{
                         System.out.println("Adding "+patentCount.get()+ " assets purchased to assignee: "+assignee);
                     });
                     currentAssignors.forEach(assignor->{
-                        if(assignor.startsWith("AVAYA")) {
-                            avayaToAssetsSoldMap.addAll(patents);
-                        }
                         if(assigneeToAssetsSoldCountMap.containsKey(assignor)) {
                             assigneeToAssetsSoldCountMap.put(assignor,assigneeToAssetsSoldCountMap.get(assignor)+patentCount.get());
                         } else {
