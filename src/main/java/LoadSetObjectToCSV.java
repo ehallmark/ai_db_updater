@@ -12,10 +12,10 @@ import java.util.Set;
  */
 public class LoadSetObjectToCSV {
     public static void main(String[] args)  throws Exception {
-        Set<String> patentsSold = (Set<String>)loadObject(AssignmentSAXHandler.avayaToAssetsSoldMapFile);
-        writeToCSV(patentsSold,new File("/home/ehallmark1122/machine_learning_cloud/data/avaya_assets_sold.csv"));
-        Set<String> patentsPurchased = (Set<String>)loadObject(AssignmentSAXHandler.avayaToAssetsPurchasedMapFile);
-        writeToCSV(patentsPurchased,new File("/home/ehallmark1122/machine_learning_cloud/data/avaya_assets_purchased.csv"));
+        //Set<String> patentsSold = (Set<String>)loadObject(AssignmentSAXHandler.avayaToAssetsSoldMapFile);
+        //writeToCSV(patentsSold,new File("/home/ehallmark1122/machine_learning_cloud/data/avaya_assets_sold.csv"));
+        //Set<String> patentsPurchased = (Set<String>)loadObject(AssignmentSAXHandler.avayaToAssetsPurchasedMapFile);
+        //writeToCSV(patentsPurchased,new File("/home/ehallmark1122/machine_learning_cloud/data/avaya_assets_purchased.csv"));
     }
 
     public static Object loadObject(File file) throws Exception{
