@@ -24,13 +24,14 @@ public class UpdateClaimScoreData {
     public static void main(String[] args) {
         Map<String,Double> patentToIndependentClaimRatioMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,Integer> patentToIndependentClaimLengthMap = Collections.synchronizedMap(new HashMap<>());
+        Map<String,Double> patentToMeansPresentRatioMap = Collections.synchronizedMap(new HashMap<>());
         try {
             Set<String> expiredPatents = UpdateMaintenanceFeeData.load();
             if(expiredPatents==null) throw new RuntimeException("No expiredPatents found");
             final int numTasks = 124;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);
             // Get last ingested date
-            Integer lastIngestedDate = 70000;
+            Integer lastIngestedDate = 60000;
             LocalDate date = LocalDate.now();
             String endDateStr = String.valueOf(date.getYear()).substring(2,4)+String.format("%02d",date.getMonthValue())+String.format("%02d",date.getDayOfMonth());
             Integer endDateInt = Integer.valueOf(endDateStr);
@@ -142,6 +143,9 @@ public class UpdateClaimScoreData {
                                                 System.out.println(iClaimRatio);
                                                 patentToIndependentClaimRatioMap.put(handler.getPatentNumber(), iClaimRatio);
                                             }
+                                            double meansPresentRatio = handler.getMeansPresentCountRatio();
+                                            System.out.println(meansPresentRatio);
+                                            patentToMeansPresentRatioMap.put(handler.getPatentNumber(), meansPresentRatio);
                                             System.out.println();
                                         }
 
@@ -171,6 +175,9 @@ public class UpdateClaimScoreData {
                                             System.out.println(iClaimRatio);
                                             patentToIndependentClaimRatioMap.put(handler.getPatentNumber(), iClaimRatio);
                                         }
+                                        double meansPresentRatio = handler.getMeansPresentCountRatio();
+                                        System.out.println(meansPresentRatio);
+                                        patentToMeansPresentRatioMap.put(handler.getPatentNumber(), meansPresentRatio);
                                         System.out.println();
                                     }
 
@@ -218,6 +225,7 @@ public class UpdateClaimScoreData {
         // save maps
         Database.saveObject(patentToIndependentClaimLengthMap,new File("patent_to_independent_claim_length_map.jobj"));
         Database.saveObject(patentToIndependentClaimRatioMap,new File("patent_to_independent_claim_ratio_map.jobj"));
+        Database.saveObject(patentToMeansPresentRatioMap,new File("patent_to_means_present_ratio_map.jobj"));
 
     }
 

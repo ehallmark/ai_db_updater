@@ -24,6 +24,7 @@ public class ClassDataSAXHandler extends DefaultHandler{
     int independentClaimLength=0;
     int independentClaimCount=0;
     int totalClaimCount=0;
+    int meansPresentCount=0;
     List<String>documentPieces=new ArrayList<>();
     private static PhrasePreprocessor phrasePreprocessor = new PhrasePreprocessor();
 
@@ -34,6 +35,8 @@ public class ClassDataSAXHandler extends DefaultHandler{
     public double getIndependentClaimRatio() {
         return new Double(independentClaimCount)/Math.max(1,totalClaimCount);
     }
+
+    public double getMeansPresentCountRatio() { return new Double(meansPresentCount)/Math.max(1,independentClaimCount); }
 
     public int getIndependentClaimLength() { return independentClaimLength; }
 
@@ -46,6 +49,7 @@ public class ClassDataSAXHandler extends DefaultHandler{
         independentClaimLength=0;
         independentClaimCount=0;
         totalClaimCount=0;
+        meansPresentCount=0;
         documentPieces.clear();
         pubDocNumber=null;
     }
@@ -97,6 +101,9 @@ public class ClassDataSAXHandler extends DefaultHandler{
                 List<String> tokens = extractTokens(String.join(" ", documentPieces));
                 independentClaimLength += tokens.size();
                 independentClaimCount++;
+                if(tokens.contains("means")) {
+                    meansPresentCount++;
+                }
             }
             claimLevel=Math.max(claimLevel-1,0);
             documentPieces.clear();
@@ -121,11 +128,11 @@ public class ClassDataSAXHandler extends DefaultHandler{
     private static List<String> extractTokens(String toExtract,boolean phrases) {
         String data = toExtract.toLowerCase().replaceAll("[^a-z ]"," ");
         return Arrays.stream((phrases?phrasePreprocessor.preProcess(data):data).split("\\s+"))
-                .filter(t->t!=null&&t.length()>0).limit(10000)
+                .filter(t->t!=null&&t.length()>0)
                 .collect(Collectors.toList());
     }
 
     private static List<String> extractTokens(String toExtract) {
-        return extractTokens(toExtract,true);
+        return extractTokens(toExtract,false);
     }
 }
