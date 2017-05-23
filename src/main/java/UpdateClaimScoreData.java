@@ -26,8 +26,6 @@ public class UpdateClaimScoreData {
         Map<String,Integer> patentToIndependentClaimLengthMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,Double> patentToMeansPresentRatioMap = Collections.synchronizedMap(new HashMap<>());
         try {
-            Set<String> expiredPatents = UpdateMaintenanceFeeData.load();
-            if(expiredPatents==null) throw new RuntimeException("No expiredPatents found");
             final int numTasks = 124;
             List<RecursiveAction> tasks = new ArrayList<>(numTasks);
             // Get last ingested date
@@ -131,7 +129,7 @@ public class UpdateClaimScoreData {
                                         // stop
                                         saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
 
-                                        if (handler.getPatentNumber() != null && !expiredPatents.contains(handler.getPatentNumber())) {
+                                        if (handler.getPatentNumber() != null) {
                                             System.out.print("Results for "+handler.getPatentNumber()+": ");
                                             int iClaimLength= handler.getIndependentClaimLength();
                                             if(iClaimLength>0) {
@@ -163,7 +161,7 @@ public class UpdateClaimScoreData {
                                     // stop
                                     saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
 
-                                    if (handler.getPatentNumber() != null && !expiredPatents.contains(handler.getPatentNumber())) {
+                                    if (handler.getPatentNumber() != null) {
                                         System.out.print("Results for "+handler.getPatentNumber()+": ");
                                         int iClaimLength= handler.getIndependentClaimLength();
                                         if(iClaimLength>0) {
