@@ -101,8 +101,8 @@ public class CitationSAXHandler extends CustomHandler{
         priorityDate=null;
         pubDocNumber=null;
         documentPieces.clear();
-        citedDocuments.clear();
-        relatedDocuments.clear();
+        citedDocuments = new HashSet<>();
+        relatedDocuments = new HashSet<>();
     }
 
     @Override
