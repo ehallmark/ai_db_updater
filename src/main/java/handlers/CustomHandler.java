@@ -8,4 +8,5 @@ import org.xml.sax.helpers.DefaultHandler;
 public abstract class CustomHandler extends DefaultHandler {
     public abstract void reset();
     public abstract void save();
+    public abstract CustomHandler newInstance();
 }

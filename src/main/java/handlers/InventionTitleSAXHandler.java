@@ -43,6 +43,11 @@ public class InventionTitleSAXHandler extends CustomHandler{
     }
 
     @Override
+    public CustomHandler newInstance() {
+        return new InventionTitleSAXHandler();
+    }
+
+    @Override
     public void reset() {
         update();
         isInventionTitle=false;

@@ -51,6 +51,11 @@ public class CitationSAXHandler extends CustomHandler{
     private Set<String> citedDocuments = new HashSet<>();
     private Set<String> relatedDocuments = new HashSet<>();
 
+    @Override
+    public CustomHandler newInstance() {
+        return new CitationSAXHandler();
+    }
+
     private void update() {
         if(pubDocNumber!=null) {
             allPatents.add(pubDocNumber);
