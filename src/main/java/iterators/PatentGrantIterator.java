@@ -122,8 +122,6 @@ public class PatentGrantIterator implements WebIterator {
                         }
 
                     } finally {
-                        startDate = startDate.plusDays(1);
-
                         // cleanup
                         // Delete zip and related folders
                         File zipFile = new File(zipFilename);
@@ -135,6 +133,7 @@ public class PatentGrantIterator implements WebIterator {
                 }
             };
 
+            startDate = startDate.plusDays(1);
             action.fork();
             tasks.add(action);
 
