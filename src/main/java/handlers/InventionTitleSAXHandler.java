@@ -37,8 +37,7 @@ public class InventionTitleSAXHandler extends CustomHandler{
             patentToInventionTitleMap.put(pubDocNumber,inventionTitle);
         }
         if(pubDocNumber!=null && !originalAssignees.isEmpty()) {
-            List<String> cloneAssignees = new ArrayList<>(originalAssignees);
-            patentToOriginalAssigneeMap.put(pubDocNumber,cloneAssignees);
+            patentToOriginalAssigneeMap.put(pubDocNumber,originalAssignees);
         }
     }
 
@@ -59,7 +58,7 @@ public class InventionTitleSAXHandler extends CustomHandler{
         inventionTitle=null;
         pubDocNumber=null;
         documentPieces.clear();
-        originalAssignees.clear();
+        originalAssignees = new ArrayList<>();
     }
 
     @Override
@@ -103,11 +102,6 @@ public class InventionTitleSAXHandler extends CustomHandler{
             isDocNumber=false;
             pubDocNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(pubDocNumber.startsWith("0"))pubDocNumber = pubDocNumber.substring(1,pubDocNumber.length());
-
-            if(pubDocNumber.replaceAll("[^0-9]","").length()!=pubDocNumber.length()) {
-                pubDocNumber=null;
-                shouldTerminate = true;
-            }
             documentPieces.clear();
         }
 
@@ -117,7 +111,6 @@ public class InventionTitleSAXHandler extends CustomHandler{
 
             if(inventionTitle.isEmpty()) {
                 inventionTitle=null;
-                shouldTerminate = true;
             }
             documentPieces.clear();
         }

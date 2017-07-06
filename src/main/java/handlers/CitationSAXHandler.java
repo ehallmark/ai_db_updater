@@ -207,11 +207,6 @@ public class CitationSAXHandler extends CustomHandler{
             isDocNumber=false;
             pubDocNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(pubDocNumber.startsWith("0"))pubDocNumber = pubDocNumber.substring(1,pubDocNumber.length());
-
-            if(pubDocNumber.replaceAll("[^0-9]","").length()!=pubDocNumber.length() || (pubDocNumber.length()!=7 && pubDocNumber.length()!=8)) {
-                pubDocNumber=null;
-                shouldTerminate = true;
-            }
             documentPieces.clear();
         }
 
