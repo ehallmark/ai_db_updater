@@ -18,19 +18,19 @@ import java.util.stream.Collectors;
 
  */
 public class InventionTitleSAXHandler extends CustomHandler{
-    private static Map<String,String> patentToInventionTitleMap = Collections.synchronizedMap(new HashMap<>());
-    private static Map<String,List<String>> patentToOriginalAssigneeMap = Collections.synchronizedMap(new HashMap<>());
+    protected static Map<String,String> patentToInventionTitleMap = Collections.synchronizedMap(new HashMap<>());
+    protected  static Map<String,List<String>> patentToOriginalAssigneeMap = Collections.synchronizedMap(new HashMap<>());
 
-    boolean inPublicationReference=false;
-    boolean isDocNumber=false;
-    boolean isInventionTitle=false;
-    boolean shouldTerminate = false;
-    boolean inAssignee=false;
-    boolean isOrgname = false;
-    String pubDocNumber;
-    String inventionTitle;
-    List<String> documentPieces = new ArrayList<>();
-    private List<String> originalAssignees = new ArrayList<>();
+    protected boolean inPublicationReference=false;
+    protected boolean isDocNumber=false;
+    protected boolean isInventionTitle=false;
+    protected boolean shouldTerminate = false;
+    protected boolean inAssignee=false;
+    protected boolean isOrgname = false;
+    protected String pubDocNumber;
+    protected String inventionTitle;
+    protected List<String> documentPieces = new ArrayList<>();
+    protected List<String> originalAssignees = new ArrayList<>();
 
     protected void update() {
         if (pubDocNumber != null&&inventionTitle!=null) {

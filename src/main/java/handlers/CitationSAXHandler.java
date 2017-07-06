@@ -22,32 +22,32 @@ import java.util.*;
 
  */
 public class CitationSAXHandler extends CustomHandler{
-    private static Map<String,LocalDate> patentToPubDateMap = Collections.synchronizedMap(new HashMap<>());
-    private static Map<String,LocalDate> patentToAppDateMap = Collections.synchronizedMap(new HashMap<>());
-    private static Map<String,Set<String>> patentToCitedPatentsMap = Collections.synchronizedMap(new HashMap<>());
-    private static Map<String,Set<String>> patentToRelatedDocMap = Collections.synchronizedMap(new HashMap());
-    private static Map<String,LocalDate> patentToPriorityDateMap = Collections.synchronizedMap(new HashMap<>());
-    private static Set<String> lapsedPatentsSet = Collections.synchronizedSet(new HashSet<>());
+    protected static Map<String,LocalDate> patentToPubDateMap = Collections.synchronizedMap(new HashMap<>());
+    protected static Map<String,LocalDate> patentToAppDateMap = Collections.synchronizedMap(new HashMap<>());
+    protected static Map<String,Set<String>> patentToCitedPatentsMap = Collections.synchronizedMap(new HashMap<>());
+    protected static Map<String,Set<String>> patentToRelatedDocMap = Collections.synchronizedMap(new HashMap());
+    protected static Map<String,LocalDate> patentToPriorityDateMap = Collections.synchronizedMap(new HashMap<>());
+    protected static Set<String> lapsedPatentsSet = Collections.synchronizedSet(new HashSet<>());
 
-    boolean inPublicationReference=false;
-    boolean inApplicationReference=false;
-    boolean isDocNumber=false;
-    boolean isAppDate=false;
-    boolean isPubDate=false;
-    boolean inCitation=false;
-    boolean isRelatedDocNumber=false;
-    boolean inRelatedDoc=false;
-    boolean inPriorityClaims=false;
-    boolean isCitedDocNumber = false;
-    boolean isPriorityDate = false;
-    boolean shouldTerminate = false;
-    String pubDocNumber;
-    LocalDate appDate;
-    LocalDate pubDate;
-    LocalDate priorityDate;
-    List<String> documentPieces = new ArrayList<>();
-    private Set<String> citedDocuments = new HashSet<>();
-    private Set<String> relatedDocuments = new HashSet<>();
+    protected boolean inPublicationReference=false;
+    protected boolean inApplicationReference=false;
+    protected boolean isDocNumber=false;
+    protected boolean isAppDate=false;
+    protected boolean isPubDate=false;
+    protected boolean inCitation=false;
+    protected boolean isRelatedDocNumber=false;
+    protected boolean inRelatedDoc=false;
+    protected boolean inPriorityClaims=false;
+    protected boolean isCitedDocNumber = false;
+    protected boolean isPriorityDate = false;
+    protected boolean shouldTerminate = false;
+    protected String pubDocNumber;
+    protected LocalDate appDate;
+    protected LocalDate pubDate;
+    protected LocalDate priorityDate;
+    protected List<String> documentPieces = new ArrayList<>();
+    protected Set<String> citedDocuments = new HashSet<>();
+    protected Set<String> relatedDocuments = new HashSet<>();
 
     @Override
     public CustomHandler newInstance() {
