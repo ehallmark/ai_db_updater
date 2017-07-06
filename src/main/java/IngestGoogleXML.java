@@ -2,7 +2,7 @@ package main.java;
 
 import main.java.iterators.PatentGrantIterator;
 import main.java.tools.Constants;
-import main.java.tools.SAXHandler;
+import main.java.handlers.SAXHandler;
 
 
 /**

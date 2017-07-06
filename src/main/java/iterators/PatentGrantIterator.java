@@ -76,6 +76,7 @@ public class PatentGrantIterator implements WebIterator {
 
                         File xmlFile = new File(destinationFilename);
                         if (xmlFile.exists()) {
+                            System.out.println("Success!");
                             for (CustomHandler _handler : handlers) {
                                 CustomHandler handler = _handler.newInstance();
 

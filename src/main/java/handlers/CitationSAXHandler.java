@@ -253,7 +253,7 @@ public class CitationSAXHandler extends CustomHandler{
 
         if(qName.equals("doc-number")&&inCitation) {
             isCitedDocNumber=false;
-            String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
+            String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9/]","");
             if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
             if(docNumber.length()>0) citedDocuments.add(docNumber);
             documentPieces.clear();
@@ -261,7 +261,7 @@ public class CitationSAXHandler extends CustomHandler{
 
         if(inRelatedDoc&&qName.equals("doc-number")) {
             isRelatedDocNumber=false;
-            String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
+            String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9/]","");
             if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
             if(docNumber.length()>0) relatedDocuments.add(docNumber);
             documentPieces.clear();

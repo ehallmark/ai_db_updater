@@ -1,14 +1,14 @@
-package main.java.tools;
+package main.java.handlers;
 
 /**
  * Created by ehallmark on 1/3/17.
  */
 
 import main.java.database.Database;
-import main.java.handlers.CustomHandler;
+import main.java.tools.AssigneeTrimmer;
+import main.java.tools.PhrasePreprocessor;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
