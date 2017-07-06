@@ -34,39 +34,21 @@ public class AssignmentSAXHandler extends DefaultHandler{
     private String docKind=null;
     private String currentPatent = null;
     private static File patentToAssigneeMapFile = new File("patent_to_assignee_map_latest.jobj");
-    private static Map<String,List<String>> patentToAssigneeMap;
+    private static Map<String,List<String>> patentToAssigneeMap = new HashMap<>();
     private static Map<String,Integer> assigneeToAssetsSoldCountMap = Collections.synchronizedMap(new HashMap<>());
     private static Map<String,Integer> assigneeToAssetsPurchasedCountMap = Collections.synchronizedMap(new HashMap<>());
     private static final File assigneeToAssetsSoldCountMapFile = new File("assignee_to_assets_sold_count_map.jobj");
     private static final File assigneeToAssetsPurchasedCountMapFile = new File("assignee_to_assets_purchased_count_map.jobj");
 
-    static {
-        try {
-            if (patentToAssigneeMapFile.exists()) {
-                patentToAssigneeMap=load();
-            } else {
-                patentToAssigneeMap=new HashMap<>();
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
 
-    public static Map<String,List<String>> load() throws IOException, ClassNotFoundException {
-        ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(patentToAssigneeMapFile)));
-        Map<String,List<String>> patentToAssigneeMap = (Map<String,List<String>>)ois.readObject();
-        ois.close();
-        return patentToAssigneeMap;
+    public static Map<String,List<String>> load() {
+        return (Map<String,List<String>>) Database.loadObject(patentToAssigneeMapFile);
     }
 
     public static void save() throws IOException {
         Database.saveObject(assigneeToAssetsSoldCountMap,assigneeToAssetsSoldCountMapFile);
         Database.saveObject(assigneeToAssetsPurchasedCountMap,assigneeToAssetsPurchasedCountMapFile);
-        if(patentToAssigneeMap==null) return;
-        ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(patentToAssigneeMapFile)));
-        oos.writeObject(patentToAssigneeMap);
-        oos.flush();
-        oos.close();
+        Database.saveObject(patentToAssigneeMap,patentToAssigneeMapFile);
     }
 
     public void reset() {

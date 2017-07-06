@@ -37,7 +37,6 @@ public class TransactionSAXHandler extends DefaultHandler{
     }
 
     public void reset() {
-        // DO NOT CLEAR PATENT TO ASSIGNEE MAP!!!!
         inPatentAssignment=false;
         isConveyanceText=false;
         isAssignorsInterest=false;
@@ -86,7 +85,7 @@ public class TransactionSAXHandler extends DefaultHandler{
                     String patent = currentPatents.get(i);
                     if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
                         try {
-                            if(Integer.valueOf(patent) >= 7000000) {
+                            if(Integer.valueOf(patent) >= 6000000) {
                                 // good to go
                                 if(isAssignorsInterest) {
                                     System.out.println("Assignors interest: "+patent);

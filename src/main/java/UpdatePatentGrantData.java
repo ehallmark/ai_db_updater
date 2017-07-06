@@ -26,5 +26,7 @@ public class UpdatePatentGrantData {
         PatentGrantIterator iterator = new PatentGrantIterator(startDate, zipPrefix, destinationPrefix, googleCreator, usptoCreator);
 
         iterator.applyHandlers(new InventionTitleSAXHandler(), new CitationSAXHandler());
+
+        System.out.println("TOTAL PATENTS INGESTED: "+ CitationSAXHandler.allPatents.size());
     }
 }
