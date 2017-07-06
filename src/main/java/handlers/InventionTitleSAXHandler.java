@@ -1,25 +1,26 @@
-package main.java.tools;
+package main.java.handlers;
 
 /**
  * Created by ehallmark on 1/3/17.
  */
 
 import main.java.database.Database;
+import main.java.tools.AssigneeTrimmer;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
 
  */
-public class InventionTitleSAXHandler extends DefaultHandler{
+public class InventionTitleSAXHandler extends CustomHandler{
+    private static Map<String,String> patentToInventionTitleMap = Collections.synchronizedMap(new HashMap<>());
+    private static Map<String,List<String>> patentToOriginalAssigneeMap = Collections.synchronizedMap(new HashMap<>());
+
     boolean inPublicationReference=false;
     boolean isDocNumber=false;
     boolean isInventionTitle=false;
@@ -31,32 +32,19 @@ public class InventionTitleSAXHandler extends DefaultHandler{
     List<String> documentPieces = new ArrayList<>();
     private List<String> originalAssignees = new ArrayList<>();
 
-
-    public static Map<String,String> loadInventionTitleMap() throws IOException, ClassNotFoundException {
-        ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(Database.patentToInventionTitleMapFile)));
-        Map<String,String> patentToInventionTitleMap = (Map<String,String>)ois.readObject();
-        ois.close();
-        return patentToInventionTitleMap;
+    protected void update() {
+        if (pubDocNumber != null&&inventionTitle!=null) {
+            patentToInventionTitleMap.put(pubDocNumber,inventionTitle);
+        }
+        if(pubDocNumber!=null && !originalAssignees.isEmpty()) {
+            List<String> cloneAssignees = new ArrayList<>(originalAssignees);
+            patentToOriginalAssigneeMap.put(pubDocNumber,cloneAssignees);
+        }
     }
 
-    public static Map<String,List<String>> loadOriginalAssigneeMap() throws IOException, ClassNotFoundException {
-        ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(Database.patentToOriginalAssigneeMapFile)));
-        Map<String,List<String>> patentToOriginalAssigneeMap = (Map<String,List<String>>)ois.readObject();
-        ois.close();
-        return patentToOriginalAssigneeMap;
-    }
-
-    public String getPatentNumber() {
-        return pubDocNumber;
-    }
-
-    public String getInventionTitle() {
-        return inventionTitle;
-    }
-
-    public List<String> getOriginalAssignees() { return originalAssignees; }
-
+    @Override
     public void reset() {
+        update();
         isInventionTitle=false;
         inPublicationReference=false;
         isDocNumber=false;
@@ -67,6 +55,12 @@ public class InventionTitleSAXHandler extends DefaultHandler{
         pubDocNumber=null;
         documentPieces.clear();
         originalAssignees.clear();
+    }
+
+    @Override
+    public void save() {
+        Database.saveObject(patentToInventionTitleMap,Database.patentToInventionTitleMapFile);
+        Database.saveObject(patentToOriginalAssigneeMap,Database.patentToOriginalAssigneeMapFile);
     }
 
     public void startElement(String uri,String localName,String qName,

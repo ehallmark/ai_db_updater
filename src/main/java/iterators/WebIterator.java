@@ -9,6 +9,5 @@ import java.io.File;
  * Created by Evan on 7/5/2017.
  */
 public interface WebIterator {
-    void handleNextFile(CustomHandler... handlers);
-    boolean hasNext();
+    void applyHandlers(CustomHandler... handlers);
 }

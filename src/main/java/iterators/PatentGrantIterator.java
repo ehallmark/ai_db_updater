@@ -13,6 +13,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RecursiveAction;
 
 
 /**
@@ -31,106 +32,126 @@ public class PatentGrantIterator implements WebIterator {
     }
 
     @Override
-    public void handleNextFile(CustomHandler... handlers) {
-        try {
-            while(startDate.isBefore(LocalDate.now())) {
-                String zipFilename = zipFilePrefix + startDate;
-                String destinationFilename = destinationPrefix + startDate;
-                for (UrlCreator urlCreator : urlCreators) {
+    public void applyHandlers(CustomHandler... handlers) {
+        List<RecursiveAction> tasks = new ArrayList<>();
+        while (startDate.isBefore(LocalDate.now())) {
+            final String zipFilename = zipFilePrefix + startDate;
+            final String destinationFilename = destinationPrefix + startDate;
+            RecursiveAction action = new RecursiveAction() {
+                @Override
+                protected void compute() {
                     try {
-                        URL website = new URL(urlCreator.create(startDate));
-                        System.out.println("Trying: " + website.toString());
-                        ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                        FileOutputStream fos = new FileOutputStream(zipFilename);
-                        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                        fos.close();
+                        for (UrlCreator urlCreator : urlCreators) {
+                            try {
+                                URL website = new URL(urlCreator.create(startDate));
+                                System.out.println("Trying: " + website.toString());
+                                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                                FileOutputStream fos = new FileOutputStream(zipFilename);
+                                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                                fos.close();
 
-                        try {
-                            // Unzip file
-                            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(zipFilename)));
-                            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(destinationFilename)));
-                            ZipHelper.unzip(bis, bos);
-                            bis.close();
-                            bos.close();
-                            break;
+                                try {
+                                    // Unzip file
+                                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(zipFilename)));
+                                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(destinationFilename)));
+                                    ZipHelper.unzip(bis, bos);
+                                    bis.close();
+                                    bos.close();
+                                    break;
 
-                        } catch (Exception e) {
-                            System.out.println("Unable to unzip file");
+                                } catch (Exception e) {
+                                    System.out.println("Unable to unzip file");
+                                }
+                            } catch (Exception e) {
+                            }
                         }
-                    } catch (Exception e) {
-                    }
-                }
 
-                // break if we found one
-                if(new File(zipFilename).exists()) break;
+                        // break if we found one
+                        if (!new File(zipFilename).exists()) return;
 
-                startDate=startDate.plusDays(1);
-            }
-            File xmlFile = new File(destinationPrefix+startDate);
-            if (xmlFile.exists()) {
-                for (CustomHandler handler : handlers) {
+                        startDate = startDate.plusDays(1);
 
-                    // Ingest data for each file
-                    try {
+                        File xmlFile = new File(destinationFilename);
+                        if (xmlFile.exists()) {
+                            for (CustomHandler handler : handlers) {
 
-                        SAXParserFactory factory = SAXParserFactory.newInstance();
-                        factory.setNamespaceAware(false);
-                        factory.setValidating(false);
-                        // security vulnerable
-                        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-                        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-                        SAXParser saxParser = factory.newSAXParser();
-
-                        FileReader fr = new FileReader(xmlFile);
-                        BufferedReader br = new BufferedReader(fr);
-                        String line;
-                        boolean firstLine = true;
-                        List<String> lines = new ArrayList<>();
-                        while ((line = br.readLine()) != null) {
-                            if (line.contains("<?xml") && !firstLine) {
-                                // stop
-                                saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
+                                // Ingest data for each file
                                 try {
 
-                                } catch (Exception nfe) {
-                                    // not a utility patent
-                                    // skip...
+                                    SAXParserFactory factory = SAXParserFactory.newInstance();
+                                    factory.setNamespaceAware(false);
+                                    factory.setValidating(false);
+                                    // security vulnerable
+                                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+                                    SAXParser saxParser = factory.newSAXParser();
+
+                                    FileReader fr = new FileReader(xmlFile);
+                                    BufferedReader br = new BufferedReader(fr);
+                                    String line;
+                                    boolean firstLine = true;
+                                    List<String> lines = new ArrayList<>();
+                                    while ((line = br.readLine()) != null) {
+                                        if (line.contains("<?xml") && !firstLine) {
+                                            // stop
+                                            saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
+                                            try {
+
+                                            } catch (Exception nfe) {
+                                                // not a utility patent
+                                                // skip...
+                                            }
+                                            lines.clear();
+                                            handler.reset();
+                                        }
+                                        if (firstLine) firstLine = false;
+                                        lines.add(line);
+                                    }
+                                    br.close();
+                                    fr.close();
+
+                                    // get the last one
+                                    if (!lines.isEmpty()) {
+                                        saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
+                                        lines.clear();
+                                        handler.reset();
+                                    }
+
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
-                                lines.clear();
-                                handler.reset();
                             }
-                            if (firstLine) firstLine = false;
-                            lines.add(line);
-                        }
-                        br.close();
-                        fr.close();
-
-                        // get the last one
-                        if (!lines.isEmpty()) {
-                            saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
-                            lines.clear();
-                            handler.reset();
                         }
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    } finally {
+                        // cleanup
+                        // Delete zip and related folders
+                        File zipFile = new File(zipFilename);
+                        if (zipFile.exists()) zipFile.delete();
+
+                        File xmlFile = new File(destinationFilename);
+                        if (xmlFile.exists()) xmlFile.delete();
                     }
                 }
+            };
+
+            action.fork();
+            tasks.add(action);
+
+            while(tasks.size()>Runtime.getRuntime().availableProcessors()) {
+                tasks.remove(0).join();
             }
-
-        } finally {
-            // cleanup
-            // Delete zip and related folders
-            File zipFile = new File(zipFilePrefix+startDate);
-            if (zipFile.exists()) zipFile.delete();
-
-            File xmlFile = new File(destinationPrefix+startDate);
-            if (xmlFile.exists()) xmlFile.delete();
         }
+
+        while(!tasks.isEmpty()) {
+            tasks.remove(0).join();
+        }
+
+        // save
+        for(CustomHandler handler : handlers) {
+            handler.save();
+        }
+
     }
 
-    @Override
-    public boolean hasNext() {
-        return startDate.isAfter(LocalDate.now());
-    }
 }

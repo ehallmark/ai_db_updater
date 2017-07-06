@@ -1,5 +1,7 @@
 package main.java;
 
+import main.java.database.Database;
+
 import java.io.*;
 import java.util.*;
 
@@ -14,15 +16,6 @@ public class ConstructAssigneeToPatentsMap {
         Map<String,Set<String>> assigneeToPatentsMap = (Map<String,Set<String>>)ois.readObject();
         ois.close();
         return assigneeToPatentsMap;
-    }
-
-    public static void saveAssigneeToPatentsHash(Map<String,Set<String>> assigneeToPatentsMap) throws IOException {
-        if(assigneeToPatentsMap!=null) {
-            ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(assigneeToPatentsMapFile)));
-            oos.writeObject(assigneeToPatentsMap);
-            oos.flush();
-            oos.close();
-        }
     }
 
     public static void constructMap() throws Exception {
@@ -48,7 +41,7 @@ public class ConstructAssigneeToPatentsMap {
         });
 
         System.out.println("Starting to load original assignee map...");
-        Map<String,List<String>> originalAssigneeMap = UpdateInventionTitleAndOriginalAssigneeHash.loadOriginalAssigneeMap();
+        Map<String,List<String>> originalAssigneeMap = (Map<String,List<String>>) Database.loadObject(Database.patentToOriginalAssigneeMapFile);
         if(originalAssigneeMap==null) throw new RuntimeException("Original Assignee Map is null");
 
         System.out.println("Starting to read through original assignee map...");
@@ -69,7 +62,7 @@ public class ConstructAssigneeToPatentsMap {
 
         System.out.println("Starting to save results...");
         // save
-        saveAssigneeToPatentsHash(assigneeToPatentsMap);
+        Database.saveObject(assigneeToPatentsMap,assigneeToPatentsMapFile);
 
         System.out.println("Num assignees: "+assigneeToPatentsMap.size());
     }
