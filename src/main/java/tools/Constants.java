@@ -5,4 +5,5 @@ package main.java.tools;
  */
 public class Constants {
     public static final int DEFAULT_START_DATE_INTEGER = 50000;
+    public static final String DATA_FOLDER = "data/";
 }

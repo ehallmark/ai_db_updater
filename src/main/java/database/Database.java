@@ -51,28 +51,31 @@ public class Database {
         }
     }
 
-    public static void saveObject(Object obj, File toSave) {
-        System.out.println("Saving "+toSave.getName()+"...");
+    public static Object loadObject(File file) {
+        System.out.println("Starting to load file: "+file.getName()+"...");
         try {
-            ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(toSave)));
-            oos.writeObject(obj);
-            oos.flush();
-            oos.close();
-            System.out.println("Saved " + toSave.getName() + ".");
-        } catch(IOException ioe) {
-            ioe.printStackTrace();
+            if(!file.exists() && new File(Constants.DATA_FOLDER+file.getName()).exists()) file = new File(Constants.DATA_FOLDER+file.getName());
+            ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)));
+            Object toReturn = ois.readObject();
+            ois.close();
+            System.out.println("Successfully loaded "+file.getName()+".");
+            return toReturn;
+        } catch(Exception e) {
+            e.printStackTrace();
+            //throw new RuntimeException("Unable to open file: "+file.getPath());
+            return null;
         }
     }
 
-    public static Object loadObject(File file) {
+    public static void saveObject(Object obj, File file) {
         try {
-            ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)));
-            Map<String, List<String>> patentToAssigneeMap = (Map<String, List<String>>) ois.readObject();
-            ois.close();
-            return patentToAssigneeMap;
+            file = new File(Constants.DATA_FOLDER+file.getName());
+            ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+            oos.writeObject(obj);
+            oos.flush();
+            oos.close();
         } catch(Exception e) {
             e.printStackTrace();
-            return null;
         }
     }
 
