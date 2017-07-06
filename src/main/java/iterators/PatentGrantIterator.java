@@ -37,13 +37,14 @@ public class PatentGrantIterator implements WebIterator {
         while (startDate.isBefore(LocalDate.now())) {
             final String zipFilename = zipFilePrefix + startDate;
             final String destinationFilename = destinationPrefix + startDate;
+            final LocalDate date = startDate;
             RecursiveAction action = new RecursiveAction() {
                 @Override
                 protected void compute() {
                     try {
                         for (UrlCreator urlCreator : urlCreators) {
                             try {
-                                URL website = new URL(urlCreator.create(startDate));
+                                URL website = new URL(urlCreator.create(date));
                                 System.out.println("Trying: " + website.toString());
                                 ReadableByteChannel rbc = Channels.newChannel(website.openStream());
                                 FileOutputStream fos = new FileOutputStream(zipFilename);
@@ -69,7 +70,7 @@ public class PatentGrantIterator implements WebIterator {
                                 return;
                             }
                         }
-                        
+
 
                         File xmlFile = new File(destinationFilename);
                         if (xmlFile.exists()) {
