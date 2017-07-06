@@ -114,7 +114,7 @@ public class Database {
         Map<String,String> patentToInventionTitleMap = Collections.synchronizedMap(new HashMap<>());
         Map<String,List<String>> patentToOriginalAssigneeMap = Collections.synchronizedMap(new HashMap<>());
         List<RecursiveAction> tasks = new ArrayList<>();
-        Integer lastIngestedDate = 60000;
+        Integer lastIngestedDate = Constants.DEFAULT_START_DATE_INTEGER;
         LocalDate date = LocalDate.now();
         String endDateStr = String.valueOf(date.getYear()).substring(2,4)+String.format("%02d",date.getMonthValue())+String.format("%02d",date.getDayOfMonth());
         Integer endDateInt = Integer.valueOf(endDateStr);
@@ -306,7 +306,7 @@ public class Database {
         Map<String,LocalDate> patentToPriorityDateMap = Collections.synchronizedMap(new HashMap<>());
         Set<String> lapsedPatentsSet = Collections.synchronizedSet(new HashSet<>());
         List<RecursiveAction> tasks = new ArrayList<>();
-        Integer lastIngestedDate = 60000;
+        Integer lastIngestedDate = Constants.DEFAULT_START_DATE_INTEGER;
         LocalDate date = LocalDate.now();
         String endDateStr = String.valueOf(date.getYear()).substring(2,4)+String.format("%02d",date.getMonthValue())+String.format("%02d",date.getDayOfMonth());
         Integer endDateInt = Integer.valueOf(endDateStr);
