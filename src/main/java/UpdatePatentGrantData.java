@@ -28,5 +28,6 @@ public class UpdatePatentGrantData {
         iterator.applyHandlers(new InventionTitleSAXHandler(), new CitationSAXHandler());
 
         System.out.println("TOTAL PATENTS INGESTED: "+ CitationSAXHandler.allPatents.size());
+        System.out.println("FINAL DATE: "+ iterator.startDate.toString());
     }
 }

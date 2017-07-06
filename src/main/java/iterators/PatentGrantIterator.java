@@ -21,7 +21,7 @@ import java.util.concurrent.RecursiveAction;
  * Created by Evan on 7/5/2017.
  */
 public class PatentGrantIterator implements WebIterator {
-    private LocalDate startDate;
+    public LocalDate startDate;
     private UrlCreator[] urlCreators;
     private String zipFilePrefix;
     private String destinationPrefix;
@@ -65,14 +65,15 @@ public class PatentGrantIterator implements WebIterator {
 
                                 } catch (Exception e) {
                                     System.out.println("... Unable to unzip file");
-                                    return;
                                 }
                             } catch (Exception e) {
                                 System.out.println("... Failed");
-                                return;
                             }
                         }
 
+
+                        File zipFile = new File(zipFilename);
+                        if(!zipFile.exists()) return;
 
                         File xmlFile = new File(destinationFilename);
                         if (xmlFile.exists()) {
