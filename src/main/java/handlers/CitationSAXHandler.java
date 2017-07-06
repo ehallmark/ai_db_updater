@@ -28,8 +28,6 @@ public class CitationSAXHandler extends CustomHandler{
     private static Map<String,Set<String>> patentToRelatedDocMap = Collections.synchronizedMap(new HashMap());
     private static Map<String,LocalDate> patentToPriorityDateMap = Collections.synchronizedMap(new HashMap<>());
     private static Set<String> lapsedPatentsSet = Collections.synchronizedSet(new HashSet<>());
-    public static Set<String> allPatents = Collections.synchronizedSet(new HashSet<>());
-
 
     boolean inPublicationReference=false;
     boolean inApplicationReference=false;
@@ -58,7 +56,6 @@ public class CitationSAXHandler extends CustomHandler{
 
     private void update() {
         if(pubDocNumber!=null) {
-            allPatents.add(pubDocNumber);
             if (pubDate != null) {
                 patentToPubDateMap.put(pubDocNumber, pubDate);
             }
@@ -110,19 +107,15 @@ public class CitationSAXHandler extends CustomHandler{
         // invert patent map to get referenced by instead of referencing
         Map<String,Set<String>> patentToReferencedByMap = Collections.synchronizedMap(new HashMap<>());
         patentToCitedPatentsMap.forEach((patent,citedSet)->{
-            if(allPatents.contains(patent)) {
-                citedSet.forEach(cited->{
-                    if(allPatents.contains(cited)) {
-                        if(patentToReferencedByMap.containsKey(cited)) {
-                            patentToReferencedByMap.get(cited).add(patent);
-                        } else {
-                            Set<String> set = new HashSet<>();
-                            set.add(patent);
-                            patentToReferencedByMap.put(cited,set);
-                        }
-                    }
-                });
-            }
+            citedSet.forEach(cited-> {
+                if (patentToReferencedByMap.containsKey(cited)) {
+                    patentToReferencedByMap.get(cited).add(patent);
+                } else {
+                    Set<String> set = new HashSet<>();
+                    set.add(patent);
+                    patentToReferencedByMap.put(cited, set);
+                }
+            });
         });
 
         // date to patent map
@@ -150,6 +143,7 @@ public class CitationSAXHandler extends CustomHandler{
 
     public void startElement(String uri,String localName,String qName,
         Attributes attributes)throws SAXException{
+        if(shouldTerminate) return;
 
         //System.out.println("Start Element :" + qName);
 
@@ -200,13 +194,17 @@ public class CitationSAXHandler extends CustomHandler{
 
     public void endElement(String uri,String localName,
         String qName)throws SAXException{
-
+        if(shouldTerminate) return;
         //System.out.println("End Element :" + qName);
 
         if(qName.equals("doc-number")&&inPublicationReference){
             isDocNumber=false;
             pubDocNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(pubDocNumber.startsWith("0"))pubDocNumber = pubDocNumber.substring(1,pubDocNumber.length());
+            if(pubDocNumber.isEmpty()) {
+                pubDocNumber=null;
+                shouldTerminate=true;
+            }
             documentPieces.clear();
         }
 

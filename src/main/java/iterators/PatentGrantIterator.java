@@ -42,7 +42,6 @@ public class PatentGrantIterator implements WebIterator {
             RecursiveAction action = new RecursiveAction() {
                 @Override
                 protected void compute() {
-                    System.out.println("Patents seen so far: "+ CitationSAXHandler.allPatents.size());
                     try {
                         for (UrlCreator urlCreator : urlCreators) {
                             try {

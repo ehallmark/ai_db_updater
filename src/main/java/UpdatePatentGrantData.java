@@ -4,6 +4,7 @@ import main.java.handlers.InventionTitleSAXHandler;
 import main.java.iterators.PatentGrantIterator;
 import main.java.iterators.url_creators.UrlCreator;
 import main.java.handlers.CitationSAXHandler;
+import main.java.tools.Constants;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -14,20 +15,8 @@ import java.time.Month;
 public class UpdatePatentGrantData {
 
     public static void main(String[] args) {
-        LocalDate startDate = LocalDate.of(2005, Month.JANUARY, 1);
-        String zipPrefix = "patent-grant-zips";
-        String destinationPrefix = "patent-grant-destinations";
-        String googleURL = "http://storage.googleapis.com/patents/grant_full_text";
-        String secondURL = "https://bulkdata.uspto.gov/data2/patent/grant/redbook/fulltext";
-
-        UrlCreator googleCreator = date -> googleURL + "/" + date.getYear() + "/ipg" + date.toString().replace("-","").substring(2) + ".zip";
-        UrlCreator usptoCreator = date ->  secondURL + "/" + date.getYear() + "/ipg" + date.toString().replace("-","").substring(2) + ".zip";
-
-        PatentGrantIterator iterator = new PatentGrantIterator(startDate, zipPrefix, destinationPrefix, googleCreator, usptoCreator);
-
+        PatentGrantIterator iterator = Constants.DEFAULT_PATENT_GRANT_ITERATOR;
         iterator.applyHandlers(new InventionTitleSAXHandler(), new CitationSAXHandler());
-
-        System.out.println("TOTAL PATENTS INGESTED: "+ CitationSAXHandler.allPatents.size());
         System.out.println("FINAL DATE: "+ iterator.startDate.toString());
     }
 }

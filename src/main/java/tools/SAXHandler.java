@@ -4,22 +4,22 @@ package main.java.tools;
  * Created by ehallmark on 1/3/17.
  */
 
+import main.java.database.Database;
+import main.java.handlers.CustomHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
 
  */
-public class SAXHandler extends DefaultHandler{
+public class SAXHandler extends CustomHandler{
     boolean isClaim=false;
     boolean inPublicationReference=false;
-    boolean isAbstract=false;
-    //boolean inDescription=false;
-    //boolean inDescriptionParagraph=false;
     boolean isDocNumber=false;
     boolean inAssignee=false;
     boolean isOrgname = false;
@@ -28,22 +28,23 @@ public class SAXHandler extends DefaultHandler{
     List<List<String>>fullDocuments=new ArrayList<>();
     List<String>documentPieces=new ArrayList<>();
     private Set<String> assignees= new HashSet<>();
+    private static AtomicInteger cnt = new AtomicInteger(0);
     private static PhrasePreprocessor phrasePreprocessor = new PhrasePreprocessor();
 
-    public String getPatentNumber() {
-        return pubDocNumber;
+    private void update() {
+        if (pubDocNumber != null && !fullDocuments.isEmpty()) {
+            try {
+                Database.ingestRecords(pubDocNumber, assignees, fullDocuments);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
-
-    public List<List<String>> getFullDocuments() {
-        return fullDocuments;
-    }
-
-    public Set<String> getAssignees() { return assignees; }
 
     public void reset() {
+        update();
         isClaim=false;
         inPublicationReference=false;
-        isAbstract=false;
         isDocNumber=false;
         inAssignee=false;
         isOrgname=false;
@@ -52,6 +53,28 @@ public class SAXHandler extends DefaultHandler{
         documentPieces.clear();
         assignees.clear();
         pubDocNumber=null;
+        if (cnt.getAndIncrement()%1000==0)
+            try {
+                Database.commit();
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+    }
+
+    @Override
+    public void save() {
+        // do nothing
+        try {
+            Database.commit();
+            Database.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public CustomHandler newInstance() {
+        return new SAXHandler();
     }
 
     public void startElement(String uri,String localName,String qName,
@@ -71,19 +94,6 @@ public class SAXHandler extends DefaultHandler{
             isDocNumber=true;
         }
 
-        if(qName.equalsIgnoreCase("abstract")) {
-            isAbstract = true;
-        }
-
-        /*
-        if(qName.equalsIgnoreCase("description")) {
-            inDescription=true;
-        }
-
-        if(inDescription && qName.equalsIgnoreCase("p")) {
-            inDescriptionParagraph=true;
-        }*/
-
         if(qName.toLowerCase().endsWith("assignee")) {
             inAssignee=true;
         }
@@ -102,8 +112,7 @@ public class SAXHandler extends DefaultHandler{
             isDocNumber=false;
             pubDocNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(pubDocNumber.startsWith("0"))pubDocNumber = pubDocNumber.substring(1,pubDocNumber.length());
-
-            if(pubDocNumber.replaceAll("[^0-9]","").length()!=pubDocNumber.length()) {
+            if(pubDocNumber.isEmpty()) {
                 pubDocNumber=null;
                 shouldTerminate = true;
             }
@@ -123,29 +132,6 @@ public class SAXHandler extends DefaultHandler{
             documentPieces.clear();
         }
 
-        if(qName.equalsIgnoreCase("abstract")){
-            isAbstract=false;
-            List<String> tokens = extractTokens(String.join(" ",documentPieces));
-            if(tokens.size() > 5) {
-                fullDocuments.add(tokens);
-            }
-            documentPieces.clear();
-        }
-
-        /*
-        if(inDescription && qName.equalsIgnoreCase("p")) {
-            inDescriptionParagraph=false;
-        }
-
-        if(qName.equalsIgnoreCase("description")) {
-            inDescription=false;
-            List<String> tokens = extractTokens(String.join(" ",documentPieces));
-            if(tokens.size() > 5) {
-                fullDocuments.add(tokens);
-            }
-            documentPieces.clear();
-        }*/
-
         if(inAssignee&&qName.equalsIgnoreCase("orgname")) {
             isOrgname=false;
             String assignee = AssigneeTrimmer.standardizedAssignee(String.join(" ",documentPieces));
@@ -161,14 +147,7 @@ public class SAXHandler extends DefaultHandler{
     }
 
     public void characters(char ch[],int start,int length)throws SAXException{
-
-        // Example
-        // if (bfname) {
-        //    System.out.println("First Name : " + new String(ch, start, length));
-        //    bfname = false;
-        // }
-
-        if((!shouldTerminate)&&(isClaim||isDocNumber||isAbstract||isOrgname)){
+        if((!shouldTerminate)&&(isClaim||isDocNumber||isOrgname)){
             documentPieces.add(new String(ch,start,length));
         }
 
@@ -182,6 +161,6 @@ public class SAXHandler extends DefaultHandler{
     }
 
     private static List<String> extractTokens(String toExtract) {
-        return extractTokens(toExtract,true);
+        return extractTokens(toExtract,false);
     }
 }

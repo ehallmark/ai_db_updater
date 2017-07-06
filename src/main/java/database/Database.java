@@ -489,31 +489,19 @@ public class Database {
 
     }
 
-    public static Integer lastIngestedDate() throws IOException {
-        FileReader fr = new FileReader(new File("lastDateFile.txt"));
-        BufferedReader br = new BufferedReader(fr);
-        Integer lastDate = Integer.valueOf(br.readLine());
-        fr.close();
-        br.close();
-        return lastDate;
-    }
-
-    public static void ingestRecords(String patentNumber, Collection<String> assigneeData, Collection<String> classData, boolean isExpired, List<List<String>> documents) throws SQLException {
+    public static void ingestRecords(String patentNumber, Collection<String> assigneeData, List<List<String>> documents) throws SQLException {
         if(patentNumber==null)return;
-        PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,assignees,classifications,is_expired,tokens) VALUES (?,?,?,?,?) ON CONFLICT DO NOTHING");
+        PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,assignees,tokens) VALUES (?,?,?) ON CONFLICT DO NOTHING");
         System.out.println("Ingesting Patent: "+patentNumber+", Assignee(s): "+String.join("; ",assigneeData));
         final Collection<String> cleanAssigneeData = assigneeData==null ? Collections.emptySet() : assigneeData;
-        final Collection<String> cleanClassificationData = classData==null ? Collections.emptySet() : classData;
         documents.forEach(doc->{
             try {
-                synchronized (ps) {
-                    ps.setString(1, patentNumber);
+                ps.setString(1, patentNumber);
+                synchronized (conn) {
                     ps.setArray(2, conn.createArrayOf("varchar", cleanAssigneeData.toArray()));
-                    ps.setArray(3, conn.createArrayOf("varchar", cleanClassificationData.toArray()));
-                    ps.setBoolean(4,isExpired);
-                    ps.setArray(5, conn.createArrayOf("varchar", doc.toArray()));
-                    ps.executeUpdate();
+                    ps.setArray(3, conn.createArrayOf("varchar", doc.toArray()));
                 }
+                ps.executeUpdate();
             } catch(Exception e) {
                 e.printStackTrace();
             }
@@ -529,9 +517,4 @@ public class Database {
         conn.close();
     }
 
-    public static synchronized void updateLastIngestedDate(Integer date) throws IOException {
-        FileWriter fw = new FileWriter(new File("lastDateFile.txt"));
-        fw.write(date.toString());
-        fw.close();
-    }
 }

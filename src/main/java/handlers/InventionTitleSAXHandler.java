@@ -69,6 +69,7 @@ public class InventionTitleSAXHandler extends CustomHandler{
 
     public void startElement(String uri,String localName,String qName,
         Attributes attributes)throws SAXException{
+        if(shouldTerminate) return;
 
         //System.out.println("Start Element :" + qName);
 
@@ -95,6 +96,7 @@ public class InventionTitleSAXHandler extends CustomHandler{
 
     public void endElement(String uri,String localName,
         String qName)throws SAXException{
+        if(shouldTerminate) return;
 
         //System.out.println("End Element :" + qName);
 
@@ -102,6 +104,10 @@ public class InventionTitleSAXHandler extends CustomHandler{
             isDocNumber=false;
             pubDocNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(pubDocNumber.startsWith("0"))pubDocNumber = pubDocNumber.substring(1,pubDocNumber.length());
+            if(pubDocNumber.isEmpty()) {
+                pubDocNumber=null;
+                shouldTerminate=true;
+            }
             documentPieces.clear();
         }
 
