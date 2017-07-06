@@ -240,6 +240,7 @@ public class CitationSAXHandler extends CustomHandler{
             isAppDate=false;
             try {
                 appDate = LocalDate.parse(String.join("", documentPieces).trim(), DateTimeFormatter.BASIC_ISO_DATE);
+                if(priorityDate == null || appDate.isBefore(priorityDate)) priorityDate=appDate;
             } catch(Exception dateException) {
             }
             documentPieces.clear();
@@ -261,9 +262,7 @@ public class CitationSAXHandler extends CustomHandler{
             isCitedDocNumber=false;
             String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
-            if(docNumber.replaceAll("[^0-9]","").length()==docNumber.length() && (docNumber.length()==7||docNumber.length()==8)) {
-                citedDocuments.add(docNumber);
-            }
+            if(docNumber.length()>0) citedDocuments.add(docNumber);
             documentPieces.clear();
         }
 
@@ -271,10 +270,7 @@ public class CitationSAXHandler extends CustomHandler{
             isRelatedDocNumber=false;
             String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
-
-            if(docNumber.replaceAll("[^0-9]","").length()==docNumber.length() && (docNumber.length()==7||docNumber.length()==8)) {
-                relatedDocuments.add(docNumber);
-            }
+            if(docNumber.length()>0) relatedDocuments.add(docNumber);
             documentPieces.clear();
         }
 
