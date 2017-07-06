@@ -52,7 +52,8 @@ public class PatentGrantIterator implements WebIterator {
 
                                 try {
                                     // Unzip file
-                                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(zipFilename)));
+                                    File zipFile = new File(zipFilename);
+                                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(zipFile));
                                     BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(destinationFilename)));
                                     ZipHelper.unzip(bis, bos);
                                     bis.close();
@@ -60,14 +61,15 @@ public class PatentGrantIterator implements WebIterator {
                                     break;
 
                                 } catch (Exception e) {
-                                    System.out.println("Unable to unzip file");
+                                    System.out.println("... Unable to unzip file");
+                                    return;
                                 }
                             } catch (Exception e) {
+                                System.out.println("... Failed");
+                                return;
                             }
                         }
-
-                        // break if we found one
-                        if (!new File(zipFilename).exists()) return;
+                        
 
                         File xmlFile = new File(destinationFilename);
                         if (xmlFile.exists()) {

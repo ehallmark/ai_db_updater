@@ -103,6 +103,7 @@ public class CitationSAXHandler extends CustomHandler{
         documentPieces.clear();
         citedDocuments.clear();
         relatedDocuments.clear();
+        System.out.println("Patents seen so far: "+allPatents.size());
     }
 
     @Override
