@@ -69,8 +69,6 @@ public class PatentGrantIterator implements WebIterator {
                         // break if we found one
                         if (!new File(zipFilename).exists()) return;
 
-                        startDate = startDate.plusDays(1);
-
                         File xmlFile = new File(destinationFilename);
                         if (xmlFile.exists()) {
                             for (CustomHandler handler : handlers) {
@@ -124,6 +122,8 @@ public class PatentGrantIterator implements WebIterator {
                         }
 
                     } finally {
+                        startDate = startDate.plusDays(1);
+
                         // cleanup
                         // Delete zip and related folders
                         File zipFile = new File(zipFilename);
