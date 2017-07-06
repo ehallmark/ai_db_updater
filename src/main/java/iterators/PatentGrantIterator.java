@@ -1,5 +1,6 @@
 package main.java.iterators;
 
+import main.java.handlers.CitationSAXHandler;
 import main.java.handlers.CustomHandler;
 import main.java.iterators.url_creators.UrlCreator;
 import main.java.tools.ZipHelper;
@@ -41,6 +42,7 @@ public class PatentGrantIterator implements WebIterator {
             RecursiveAction action = new RecursiveAction() {
                 @Override
                 protected void compute() {
+                    System.out.println("Patents seen so far: "+ CitationSAXHandler.allPatents.size());
                     try {
                         for (UrlCreator urlCreator : urlCreators) {
                             try {

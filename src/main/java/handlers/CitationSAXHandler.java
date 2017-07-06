@@ -28,7 +28,7 @@ public class CitationSAXHandler extends CustomHandler{
     private static Map<String,Set<String>> patentToRelatedDocMap = Collections.synchronizedMap(new HashMap());
     private static Map<String,LocalDate> patentToPriorityDateMap = Collections.synchronizedMap(new HashMap<>());
     private static Set<String> lapsedPatentsSet = Collections.synchronizedSet(new HashSet<>());
-    private static Set<String> allPatents = Collections.synchronizedSet(new HashSet<>());
+    public static Set<String> allPatents = Collections.synchronizedSet(new HashSet<>());
 
 
     boolean inPublicationReference=false;
@@ -103,7 +103,6 @@ public class CitationSAXHandler extends CustomHandler{
         documentPieces.clear();
         citedDocuments.clear();
         relatedDocuments.clear();
-        System.out.println("Patents seen so far: "+allPatents.size());
     }
 
     @Override
