@@ -55,9 +55,10 @@ public class SAXHandler extends CustomHandler{
         tokenPieces.clear();
         assignees.clear();
         pubDocNumber=null;
-        if (cnt.getAndIncrement()%1000==0)
+        if (cnt.getAndIncrement()%10000==0)
             try {
                 Database.commit();
+                System.out.println("Commited: "+cnt.get());
             } catch(Exception e) {
                 e.printStackTrace();
             }

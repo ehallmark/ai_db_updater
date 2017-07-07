@@ -286,7 +286,6 @@ public class Database {
     public static void ingestRecords(String patentNumber, Collection<String> assigneeData, List<List<String>> documents) throws SQLException {
         if(patentNumber==null)return;
         PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,assignees,tokens) VALUES (?,?,?) ON CONFLICT DO NOTHING");
-        System.out.println("Ingesting Patent: "+patentNumber+", Assignee(s): "+String.join("; ",assigneeData));
         final Collection<String> cleanAssigneeData = assigneeData==null ? Collections.emptySet() : assigneeData;
         documents.forEach(doc->{
             try {
