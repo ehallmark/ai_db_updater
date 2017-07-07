@@ -56,9 +56,6 @@ public class TransactionSAXHandler extends CustomHandler{
 
     public void startElement(String uri,String localName,String qName,
         Attributes attributes)throws SAXException{
-
-        //System.out.println("Start Element :" + qName);
-
         if(qName.equals("patent-assignment")){
             shouldTerminate=false;
             inPatentAssignment=true;
@@ -80,42 +77,34 @@ public class TransactionSAXHandler extends CustomHandler{
     public void endElement(String uri,String localName,
         String qName)throws SAXException{
 
-        //System.out.println("End Element :" + qName);
-
-
         if(qName.equals("patent-assignment")){
             inPatentAssignment=false;
             // done with patent so update patent map and reset data
             if(!shouldTerminate&&!currentPatents.isEmpty()) {
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
-                    if(patent!=null&&patent.length()==7&&patent.replaceAll("[^0-9]","").length()==7) {
-                        try {
-                            if(Integer.valueOf(patent) >= 6000000) {
-                                // good to go
-                                if(isAssignorsInterest) {
-                                    System.out.println("Assignors interest: "+patent);
-                                    // transaction
-                                    if(patentToTransactionSizeMap.containsKey(patent)) {
-                                        patentToTransactionSizeMap.get(patent).add(currentPatents.size());
-                                    } else {
-                                        List<Integer> sizes = new ArrayList<>();
-                                        sizes.add(currentPatents.size());
-                                        patentToTransactionSizeMap.put(patent,sizes);
-                                    }
-                                } else if (isSecurityInterest) {
-                                    if(patentToSecurityInterestCountMap.containsKey(patent)) {
-                                        patentToSecurityInterestCountMap.put(patent,patentToSecurityInterestCountMap.get(patent)+1);
-                                    } else {
-                                        patentToSecurityInterestCountMap.put(patent,1);
-                                    }
-                                    System.out.println("Security Interest: "+patent);
+                    try {
+                        if(Integer.valueOf(patent) >= 6000000) {
+                            // good to go
+                            if(isAssignorsInterest) {
+                                // transaction
+                                if(patentToTransactionSizeMap.containsKey(patent)) {
+                                    patentToTransactionSizeMap.get(patent).add(currentPatents.size());
+                                } else {
+                                    List<Integer> sizes = new ArrayList<>();
+                                    sizes.add(currentPatents.size());
+                                    patentToTransactionSizeMap.put(patent,sizes);
+                                }
+                            } else if (isSecurityInterest) {
+                                if(patentToSecurityInterestCountMap.containsKey(patent)) {
+                                    patentToSecurityInterestCountMap.put(patent,patentToSecurityInterestCountMap.get(patent)+1);
+                                } else {
+                                    patentToSecurityInterestCountMap.put(patent,1);
                                 }
                             }
-                        } catch (NumberFormatException nfe) {
-                            // not a utility patent
                         }
-                    } else {
+                    } catch (NumberFormatException nfe) {
+                        // not a utility patent
                     }
                 }
             }
@@ -147,12 +136,6 @@ public class TransactionSAXHandler extends CustomHandler{
     }
 
     public void characters(char ch[],int start,int length)throws SAXException{
-
-        // Example
-        // if (bfname) {
-        //    System.out.println("First Name : " + new String(ch, start, length));
-        //    bfname = false;
-        // }
 
         if((!shouldTerminate)&&(isDocNumber||isConveyanceText)){
             documentPieces.add(new String(ch,start,length));

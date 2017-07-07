@@ -41,7 +41,11 @@ public class CitationSAXHandler extends CustomHandler{
     protected boolean isCitedDocNumber = false;
     protected boolean isPriorityDate = false;
     protected boolean shouldTerminate = false;
+    protected boolean isRelatedDocKind = false;
+    protected boolean isCitedDocKind = false;
     protected String pubDocNumber;
+    protected String docNumber;
+    protected String docKind;
     protected LocalDate appDate;
     protected LocalDate pubDate;
     protected LocalDate priorityDate;
@@ -84,12 +88,16 @@ public class CitationSAXHandler extends CustomHandler{
         isCitedDocNumber=false;
         inPublicationReference=false;
         inApplicationReference=false;
+        isRelatedDocKind=false;
+        isCitedDocKind = false;
         isDocNumber=false;
         isAppDate=false;
         isPubDate=false;
         inCitation=false;
         shouldTerminate = false;
         appDate=null;
+        docKind=null;
+        docNumber=null;
         pubDate=null;
         inRelatedDoc=false;
         inPriorityClaims=false;
@@ -179,12 +187,20 @@ public class CitationSAXHandler extends CustomHandler{
             isCitedDocNumber=true;
         }
 
+        if(qName.equals("kind")&&inCitation) {
+            isCitedDocKind=true;
+        }
+
         if(qName.equals("patcit")) {
             inCitation=true;
         }
 
         if(inRelatedDoc&&qName.equals("doc-number")) {
             isRelatedDocNumber=true;
+        }
+
+        if(inRelatedDoc&&qName.equals("kind")) {
+            isRelatedDocKind=true;
         }
 
         if(qName.contains("related-doc")||qName.equals("relation")||qName.equals("us-relation")) {
@@ -245,6 +261,13 @@ public class CitationSAXHandler extends CustomHandler{
 
         if(qName.equals("patcit")) {
             inCitation=false;
+            if(docNumber!=null&&docKind!=null) {
+                if(docNumber.length()>6) {
+                    citedDocuments.add(handleOtherDoc(docNumber,docKind));
+                }
+                docNumber=null;
+                docKind=null;
+            }
         }
 
         if(qName.equals("application-reference")) {
@@ -253,23 +276,49 @@ public class CitationSAXHandler extends CustomHandler{
 
         if(qName.equals("doc-number")&&inCitation) {
             isCitedDocNumber=false;
-            String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9/]","");
-            if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
-            if(docNumber.length()>0) citedDocuments.add(docNumber);
+            docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9/]","");
+            documentPieces.clear();
+        }
+
+        if(inCitation&&qName.equals("kind")) {
+            isCitedDocKind=false;
+            docKind = String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             documentPieces.clear();
         }
 
         if(inRelatedDoc&&qName.equals("doc-number")) {
             isRelatedDocNumber=false;
-            String docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9/]","");
-            if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
-            if(docNumber.length()>0) relatedDocuments.add(docNumber);
+            docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9/]","");
+            documentPieces.clear();
+        }
+
+        if(inRelatedDoc&&qName.equals("kind")) {
+            isRelatedDocKind=false;
+            docKind = String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             documentPieces.clear();
         }
 
         if(qName.contains("related-doc")||qName.equals("relation")||qName.equals("us-relation")) {
             inRelatedDoc=false;
+            if(docNumber!=null&&docKind!=null) {
+                if(docNumber.length()>6) {
+                    relatedDocuments.add(handleOtherDoc(docNumber,docKind));
+                }
+                docNumber=null;
+                docKind=null;
+            }
         }
+    }
+
+    private static String handleOtherDoc(String docNumber, String docKind) {
+        if(docKind.startsWith("A") && docNumber.length() <= 8) {
+            // 23/352355 formatting
+            docNumber = docNumber.substring(0,docNumber.length()-6)+"/"+docNumber.substring(docNumber.length()-6);
+        } else if (docKind.startsWith("B")) {
+            if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
+        }
+        System.out.println("Type "+docKind+": "+docNumber);
+        return docNumber;
     }
 
     public void characters(char ch[],int start,int length)throws SAXException{
@@ -280,7 +329,7 @@ public class CitationSAXHandler extends CustomHandler{
         //    bfname = false;
         // }
 
-        if((!shouldTerminate)&&(isCitedDocNumber||isDocNumber||isPriorityDate||isRelatedDocNumber||isAppDate||isPubDate)){
+        if((!shouldTerminate)&&(isCitedDocNumber||isRelatedDocKind||isDocNumber||isPriorityDate||isRelatedDocNumber||isAppDate||isPubDate)){
             documentPieces.add(new String(ch,start,length));
         }
 

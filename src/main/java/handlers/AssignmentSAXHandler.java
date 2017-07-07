@@ -80,8 +80,6 @@ public class AssignmentSAXHandler extends CustomHandler{
     public void startElement(String uri,String localName,String qName,
         Attributes attributes)throws SAXException{
 
-        //System.out.println("Start Element :" + qName);
-
         if(qName.equals("patent-assignment")){
             shouldTerminate=false;
             inPatentAssignment=true;
@@ -118,8 +116,6 @@ public class AssignmentSAXHandler extends CustomHandler{
     public void endElement(String uri,String localName,
         String qName)throws SAXException{
 
-        //System.out.println("End Element :" + qName);
-
 
         if(qName.equals("patent-assignment")){
             inPatentAssignment=false;
@@ -128,14 +124,16 @@ public class AssignmentSAXHandler extends CustomHandler{
                 List<String> dupAssignees = new ArrayList<>(currentAssignees.size());
                 dupAssignees.addAll(currentAssignees);
                 AtomicInteger patentCount = new AtomicInteger(0);
-                Set<String> patents = new HashSet<>();
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
                     if(patent.startsWith("0"))patent=patent.replaceFirst("0","");
-                    if(patent.length()>0) {
-                        patentToAssigneeMap.put(patent, dupAssignees);
-                        patents.add(patent);
-                        patentCount.getAndIncrement();
+                    try {
+                        if(Integer.valueOf(patent) > 6000000){
+                            patentToAssigneeMap.put(patent, dupAssignees);
+                            patentCount.getAndIncrement();
+                        }
+                    } catch(Exception e) {
+
                     }
                 }
                 if(patentCount.get()>0 && isAssignorsInterest) {
@@ -145,7 +143,6 @@ public class AssignmentSAXHandler extends CustomHandler{
                         } else {
                             assigneeToAssetsPurchasedCountMap.put(assignee,patentCount.get());
                         }
-                        System.out.println("Adding "+patentCount.get()+ " assets purchased to assignee: "+assignee);
                     });
                     currentAssignors.forEach(assignor->{
                         if(assigneeToAssetsSoldCountMap.containsKey(assignor)) {
@@ -153,7 +150,6 @@ public class AssignmentSAXHandler extends CustomHandler{
                         } else {
                             assigneeToAssetsSoldCountMap.put(assignor,patentCount.get());
                         }
-                        System.out.println("Adding "+patentCount.get()+ " assets sold to assignor: "+assignor);
                     });
                 }
             }
@@ -228,12 +224,6 @@ public class AssignmentSAXHandler extends CustomHandler{
     }
 
     public void characters(char ch[],int start,int length)throws SAXException{
-
-        // Example
-        // if (bfname) {
-        //    System.out.println("First Name : " + new String(ch, start, length));
-        //    bfname = false;
-        // }
 
         if((!shouldTerminate)&&(isName||isDocNumber||isDocKind||isConveyanceText)){
             documentPieces.add(new String(ch,start,length));
