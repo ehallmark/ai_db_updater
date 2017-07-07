@@ -114,7 +114,7 @@ public class SAXHandler extends CustomHandler{
             isDocNumber=false;
             pubDocNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(pubDocNumber.startsWith("0"))pubDocNumber = pubDocNumber.substring(1,pubDocNumber.length());
-            if(pubDocNumber.isEmpty()) {
+            if(pubDocNumber.isEmpty()||Arrays.asList('D','R','H','P').contains(pubDocNumber.charAt(0))) {
                 pubDocNumber=null;
                 shouldTerminate = true;
             }
