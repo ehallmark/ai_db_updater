@@ -165,8 +165,8 @@ public class SAXHandler extends CustomHandler{
 
     private static List<String> extractTokens(String toExtract,boolean phrases) {
         return Arrays.stream((phrases?phrasePreprocessor.preProcess(toExtract):toExtract).split("\\s+"))
-                .filter(t->t!=null&&t.length()>0).map(t->t.toLowerCase().replaceAll("[^a-z.]","")).limit(500)
-                .flatMap(t->Arrays.stream(t.split("\\."))).collect(Collectors.toList());
+                .map(t->t.toLowerCase().replaceAll("[^a-z.]","")).filter(t->t.length()>0).limit(500)
+                .flatMap(t->Arrays.stream(t.split("\\."))).filter(t->t.length()>0).collect(Collectors.toList());
     }
 
     private static List<String> extractTokens(String toExtract) {
