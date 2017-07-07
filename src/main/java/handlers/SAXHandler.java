@@ -132,10 +132,10 @@ public class SAXHandler extends CustomHandler{
         }
 
         if(qName.equals("claim")||qName.equals("abstract")){
-            claimDepth--;
+            if(qName.equals("claim")) claimDepth--;
             if(claimDepth<=0) {
                 isWithinDocument = false;
-                List<String> tokens = tokenPieces.stream().flatMap(list -> list.stream()).limit(wordLimit).collect(Collectors.toList());
+                List<String> tokens = tokenPieces.stream().sequential().flatMap(list -> list.stream()).limit(wordLimit).collect(Collectors.toList());
                 if (tokens.size() > 5) {
                     fullDocuments.add(tokens);
                 }
