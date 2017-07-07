@@ -1,6 +1,8 @@
 package main.java;
 
 import main.java.database.Database;
+import main.java.handlers.AssignmentSAXHandler;
+import main.java.handlers.TransactionSAXHandler;
 
 import java.io.*;
 import java.util.*;
@@ -21,7 +23,7 @@ public class ConstructAssigneeToPatentsMap {
     public static void constructMap() throws Exception {
         // first load original assignee map and latest assignee map
         System.out.println("Starting to load latest assignee map...");
-        Map<String,List<String>> latestAssigneeMap = UpdateLatestAssigneeHash.load();
+        Map<String,List<String>> latestAssigneeMap = (Map<String,List<String>>) Database.loadObject(AssignmentSAXHandler.patentToAssigneeMapFile);
 
         if(latestAssigneeMap==null) throw new RuntimeException("Latest Assignee Map is null");
 

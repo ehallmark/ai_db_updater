@@ -77,54 +77,62 @@ public class PatentGrantIterator implements WebIterator {
                         File xmlFile = new File(destinationFilename);
                         if (xmlFile.exists()) {
                             System.out.println("Success!");
-                            for (CustomHandler _handler : handlers) {
-                                CustomHandler handler = _handler.newInstance();
+                            // Ingest data for each file
+                            try {
 
-                                // Ingest data for each file
-                                try {
+                                SAXParserFactory factory = SAXParserFactory.newInstance();
+                                factory.setNamespaceAware(false);
+                                factory.setValidating(false);
+                                // security vulnerable
+                                factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                                factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+                                SAXParser saxParser = factory.newSAXParser();
 
-                                    SAXParserFactory factory = SAXParserFactory.newInstance();
-                                    factory.setNamespaceAware(false);
-                                    factory.setValidating(false);
-                                    // security vulnerable
-                                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-                                    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-                                    SAXParser saxParser = factory.newSAXParser();
-
-                                    FileReader fr = new FileReader(xmlFile);
-                                    BufferedReader br = new BufferedReader(fr);
-                                    String line;
-                                    boolean firstLine = true;
-                                    List<String> lines = new ArrayList<>();
-                                    while ((line = br.readLine()) != null) {
-                                        if (line.contains("<?xml") && !firstLine) {
-                                            // stop
-                                            saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
+                                FileReader fr = new FileReader(xmlFile);
+                                BufferedReader br = new BufferedReader(fr);
+                                String line;
+                                boolean firstLine = true;
+                                List<String> lines = new ArrayList<>();
+                                while ((line = br.readLine()) != null) {
+                                    if (line.contains("<?xml") && !firstLine) {
+                                        // stop
+                                        byte[] data = String.join("", lines).getBytes();
+                                        for (CustomHandler _handler : handlers) {
+                                            CustomHandler handler = _handler.newInstance();
                                             try {
-
-                                            } catch (Exception nfe) {
-                                                // not a utility patent
-                                                // skip...
+                                                saxParser.parse(new ByteArrayInputStream(data), handler);
+                                            } catch (Exception e) {
+                                                e.printStackTrace();
+                                            } finally {
+                                                handler.reset();
                                             }
-                                            lines.clear();
+                                        }
+                                        lines.clear();
+                                    }
+                                    if (firstLine) firstLine = false;
+                                    lines.add(line);
+                                }
+                                br.close();
+                                fr.close();
+
+                                // get the last one
+                                if (!lines.isEmpty()) {
+                                    byte[] data = String.join("", lines).getBytes();
+                                    for (CustomHandler _handler : handlers) {
+                                        CustomHandler handler = _handler.newInstance();
+                                        try {
+                                            saxParser.parse(new ByteArrayInputStream(data), handler);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        } finally {
                                             handler.reset();
                                         }
-                                        if (firstLine) firstLine = false;
-                                        lines.add(line);
                                     }
-                                    br.close();
-                                    fr.close();
-
-                                    // get the last one
-                                    if (!lines.isEmpty()) {
-                                        saxParser.parse(new ByteArrayInputStream(String.join("", lines).getBytes()), handler);
-                                        lines.clear();
-                                        handler.reset();
-                                    }
-
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+                                    lines.clear();
                                 }
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
                         }
 

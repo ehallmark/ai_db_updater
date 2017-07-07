@@ -34,10 +34,10 @@ public class AssignmentSAXHandler extends CustomHandler{
     private List<String> currentAssignors = new ArrayList();
     private String docKind=null;
     private String currentPatent = null;
-    private static File patentToAssigneeMapFile = new File("patent_to_assignee_map_latest.jobj");
-    private static Map<String,List<String>> patentToAssigneeMap = new HashMap<>();
-    private static Map<String,Integer> assigneeToAssetsSoldCountMap = Collections.synchronizedMap(new HashMap<>());
-    private static Map<String,Integer> assigneeToAssetsPurchasedCountMap = Collections.synchronizedMap(new HashMap<>());
+    public static final File patentToAssigneeMapFile = new File("patent_to_assignee_map_latest.jobj");
+    private static final Map<String,List<String>> patentToAssigneeMap = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<String,Integer> assigneeToAssetsSoldCountMap = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<String,Integer> assigneeToAssetsPurchasedCountMap = Collections.synchronizedMap(new HashMap<>());
     private static final File assigneeToAssetsSoldCountMapFile = new File("assignee_to_assets_sold_count_map.jobj");
     private static final File assigneeToAssetsPurchasedCountMapFile = new File("assignee_to_assets_purchased_count_map.jobj");
 
@@ -132,15 +132,10 @@ public class AssignmentSAXHandler extends CustomHandler{
                 for(int i = 0; i < currentPatents.size(); i++) {
                     String patent = currentPatents.get(i);
                     if(patent.startsWith("0"))patent=patent.replaceFirst("0","");
-                    if(patent!=null&&(patent.length()==7||patent.length()==8)&&patent.replaceAll("[^0-9]","").length()==patent.length()) {
-                        try {
-                            patentToAssigneeMap.put(patent, dupAssignees);
-                            patents.add(patent);
-                            patentCount.getAndIncrement();
-
-                        } catch (NumberFormatException nfe) {
-                            // not a utility patent
-                        }
+                    if(patent.length()>0) {
+                        patentToAssigneeMap.put(patent, dupAssignees);
+                        patents.add(patent);
+                        patentCount.getAndIncrement();
                     }
                 }
                 if(patentCount.get()>0 && isAssignorsInterest) {
@@ -167,7 +162,7 @@ public class AssignmentSAXHandler extends CustomHandler{
 
         if(inPatentAssignment&&qName.equals("conveyance-text")){
             isConveyanceText=false;
-            String text = AssigneeTrimmer.standardizedAssignee(String.join("",documentPieces));
+            String text = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
             boolean changeOfNameOrAssignorsInterest = false;
             if(text.startsWith("ASSIGNMENT OF ASSIGN")) {
                 isAssignorsInterest=true;
@@ -191,7 +186,7 @@ public class AssignmentSAXHandler extends CustomHandler{
 
         if(inDocumentID&&qName.equals("doc-number")) {
             isDocNumber = false;
-            currentPatent = AssigneeTrimmer.standardizedAssignee(String.join("",documentPieces));
+            currentPatent = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
             documentPieces.clear();
         }
 
