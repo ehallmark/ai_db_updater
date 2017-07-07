@@ -43,6 +43,8 @@ public class CitationSAXHandler extends CustomHandler{
     protected boolean shouldTerminate = false;
     protected boolean isRelatedDocKind = false;
     protected boolean isCitedDocKind = false;
+    protected boolean isRelatedDocCountry = false;
+    protected boolean isCitedDocCountry = false;
     protected String pubDocNumber;
     protected String docNumber;
     protected String docKind;
@@ -52,6 +54,7 @@ public class CitationSAXHandler extends CustomHandler{
     protected List<String> documentPieces = new ArrayList<>();
     protected Set<String> citedDocuments = new HashSet<>();
     protected Set<String> relatedDocuments = new HashSet<>();
+    protected String docCountry;
 
     @Override
     public CustomHandler newInstance() {
@@ -88,6 +91,9 @@ public class CitationSAXHandler extends CustomHandler{
         isCitedDocNumber=false;
         inPublicationReference=false;
         inApplicationReference=false;
+        docCountry=null;
+        isRelatedDocCountry=false;
+        isCitedDocCountry=false;
         isRelatedDocKind=false;
         isCitedDocKind = false;
         isDocNumber=false;
@@ -203,6 +209,14 @@ public class CitationSAXHandler extends CustomHandler{
             isRelatedDocKind=true;
         }
 
+        if(inRelatedDoc&&qName.equals("country")) {
+            isRelatedDocCountry=true;
+        }
+
+        if(inCitation&&qName.equals("country")) {
+            isCitedDocCountry=true;
+        }
+
         if(qName.contains("related-doc")||qName.equals("relation")||qName.equals("us-relation")) {
             inRelatedDoc=true;
         }
@@ -261,10 +275,9 @@ public class CitationSAXHandler extends CustomHandler{
 
         if(qName.equals("patcit")) {
             inCitation=false;
-            if(docNumber!=null&&docKind!=null) {
-                if(docNumber.length()>6) {
-                    citedDocuments.add(handleOtherDoc(docNumber,docKind));
-                }
+            if(docNumber!=null&&docKind!=null&&docCountry!=null) {
+                docNumber = handleOtherDoc(docNumber,docKind,docCountry);
+                if(docNumber!=null) citedDocuments.add(docNumber);
                 docNumber=null;
                 docKind=null;
             }
@@ -298,25 +311,38 @@ public class CitationSAXHandler extends CustomHandler{
             documentPieces.clear();
         }
 
+        if(inCitation&&qName.equals("country")) {
+            isCitedDocCountry=false;
+            docCountry = String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
+            documentPieces.clear();
+        }
+
+        if(inRelatedDoc&&qName.equals("country")) {
+            isRelatedDocCountry=false;
+            docCountry = String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
+            documentPieces.clear();
+        }
+
         if(qName.contains("related-doc")||qName.equals("relation")||qName.equals("us-relation")) {
             inRelatedDoc=false;
-            if(docNumber!=null&&docKind!=null) {
-                if(docNumber.length()>6) {
-                    relatedDocuments.add(handleOtherDoc(docNumber,docKind));
-                }
+            if(docNumber!=null&&docKind!=null&&docCountry!=null) {
+                docNumber = handleOtherDoc(docNumber,docKind,docCountry);
+                if(docNumber!=null) relatedDocuments.add(docNumber);
                 docNumber=null;
                 docKind=null;
             }
         }
     }
 
-    private static String handleOtherDoc(String docNumber, String docKind) {
-        if(docKind.startsWith("A") && docNumber.length() <= 8) {
+    private static String handleOtherDoc(String docNumber, String docKind, String docCountry) {
+        if(docNumber.length()<=6 && docCountry.equals("US")) return null;
+        if(docKind.startsWith("A") && docNumber.length() <= 8 && docCountry.equals("US")) {
             // 23/352355 formatting
             docNumber = docNumber.substring(0,docNumber.length()-6)+"/"+docNumber.substring(docNumber.length()-6);
-        } else if (docKind.startsWith("B")) {
+        } else if (docKind.startsWith("B") && docCountry.equals("US")) {
             if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
         }
+        if(! docCountry.equals("US") && !docNumber.startsWith(docCountry)) docNumber=docCountry+docNumber;
         System.out.println("Type "+docKind+": "+docNumber);
         return docNumber;
     }

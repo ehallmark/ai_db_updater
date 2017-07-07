@@ -23,7 +23,7 @@ public class ApplicationCitationSAXHandler extends CitationSAXHandler {
 
     @Override
     public void save() {
-        Database.saveObject(patentToCitedPatentsMap,Database.appToCitedPatentsMapFile);
+        //Database.saveObject(patentToCitedPatentsMap,Database.appToCitedPatentsMapFile);
         Database.saveObject(patentToRelatedDocMap,Database.appToRelatedDocMapFile);
         Database.saveObject(patentToPubDateMap,Database.appToPubDateMapFile);
         Database.saveObject(patentToAppDateMap,Database.appToAppDateMapFile);
