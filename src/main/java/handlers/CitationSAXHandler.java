@@ -279,6 +279,7 @@ public class CitationSAXHandler extends CustomHandler{
                 docNumber = handleOtherDoc(docNumber,docKind,docCountry);
                 if(docNumber!=null) citedDocuments.add(docNumber);
                 docNumber=null;
+                docCountry=null;
                 docKind=null;
             }
         }
@@ -330,6 +331,7 @@ public class CitationSAXHandler extends CustomHandler{
                 if(docNumber!=null) relatedDocuments.add(docNumber);
                 docNumber=null;
                 docKind=null;
+                docCountry=null;
             }
         }
     }
@@ -355,7 +357,7 @@ public class CitationSAXHandler extends CustomHandler{
         //    bfname = false;
         // }
 
-        if((!shouldTerminate)&&(isCitedDocNumber||isRelatedDocKind||isDocNumber||isPriorityDate||isRelatedDocNumber||isAppDate||isPubDate)){
+        if((!shouldTerminate)&&(isCitedDocNumber||isRelatedDocKind||isRelatedDocCountry||isCitedDocCountry||isCitedDocKind||isDocNumber||isPriorityDate||isRelatedDocNumber||isAppDate||isPubDate)){
             documentPieces.add(new String(ch,start,length));
         }
 
