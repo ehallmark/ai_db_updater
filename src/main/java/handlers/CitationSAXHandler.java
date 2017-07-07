@@ -339,7 +339,7 @@ public class CitationSAXHandler extends CustomHandler{
     private static String handleOtherDoc(String docNumber, String docKind, String docCountry) {
         if(docNumber.length()<=6 && docCountry.equals("US")) return null;
         if(docCountry.isEmpty()) return null;
-        
+
         if(docCountry.equals("US")) {
             if ((docKind.startsWith("A")||docKind.isEmpty()) && docNumber.length() == 8) {
                 // 23/352355 formatting
