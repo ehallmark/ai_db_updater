@@ -1,10 +1,11 @@
-package main.java.tools;
+package main.java.handlers;
 
 /**
  * Created by ehallmark on 1/3/17.
  */
 
 import main.java.database.Database;
+import main.java.tools.AssigneeTrimmer;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
 
  */
-public class AssignmentSAXHandler extends DefaultHandler{
+public class AssignmentSAXHandler extends CustomHandler{
     private boolean inPatentAssignment = false;
     private boolean isConveyanceText=false;
     private boolean inPatentAssignee=false;
@@ -45,10 +46,15 @@ public class AssignmentSAXHandler extends DefaultHandler{
         return (Map<String,List<String>>) Database.loadObject(patentToAssigneeMapFile);
     }
 
-    public static void save() throws IOException {
+    public void save() {
         Database.saveObject(assigneeToAssetsSoldCountMap,assigneeToAssetsSoldCountMapFile);
         Database.saveObject(assigneeToAssetsPurchasedCountMap,assigneeToAssetsPurchasedCountMapFile);
         Database.saveObject(patentToAssigneeMap,patentToAssigneeMapFile);
+    }
+
+    @Override
+    public CustomHandler newInstance() {
+        return new AssignmentSAXHandler();
     }
 
     public void reset() {
@@ -161,7 +167,7 @@ public class AssignmentSAXHandler extends DefaultHandler{
 
         if(inPatentAssignment&&qName.equals("conveyance-text")){
             isConveyanceText=false;
-            String text = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
+            String text = AssigneeTrimmer.standardizedAssignee(String.join("",documentPieces));
             boolean changeOfNameOrAssignorsInterest = false;
             if(text.startsWith("ASSIGNMENT OF ASSIGN")) {
                 isAssignorsInterest=true;
@@ -185,9 +191,8 @@ public class AssignmentSAXHandler extends DefaultHandler{
 
         if(inDocumentID&&qName.equals("doc-number")) {
             isDocNumber = false;
-            currentPatent = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
+            currentPatent = AssigneeTrimmer.standardizedAssignee(String.join("",documentPieces));
             documentPieces.clear();
-
         }
 
         if(inPatentAssignment&&qName.equals("patent-assignee")) {

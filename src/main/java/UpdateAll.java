@@ -6,6 +6,7 @@ package main.java;
 public class UpdateAll {
     public static void main(String[] args) {
         UpdatePatentGrantData.main(args);
+        UpdatePatentApplicationData.main(args);
         UpdateAssignmentData.main(args);
     }
 }

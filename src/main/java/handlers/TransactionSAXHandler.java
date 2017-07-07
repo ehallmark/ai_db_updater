@@ -1,10 +1,11 @@
-package main.java.tools;
+package main.java.handlers;
 
 /**
  * Created by ehallmark on 1/3/17.
  */
 
 import main.java.database.Database;
+import main.java.tools.AssigneeTrimmer;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -15,7 +16,7 @@ import java.util.*;
 /**
 
  */
-public class TransactionSAXHandler extends DefaultHandler{
+public class TransactionSAXHandler extends CustomHandler{
     private boolean inPatentAssignment = false;
     private boolean isConveyanceText=false;
     private boolean isAssignorsInterest = false;
@@ -31,9 +32,14 @@ public class TransactionSAXHandler extends DefaultHandler{
     private static final File patentToTransactionSizesMapFile = new File("patent_to_transaction_sizes_map.jobj");
     private static Map<String,List<Integer>> patentToTransactionSizeMap = new HashMap<>();
 
-    public static void save() throws IOException {
+    public void save()  {
         Database.saveObject(patentToSecurityInterestCountMap,patentToSecurityInterestCountMapFile);
         Database.saveObject(patentToTransactionSizeMap,patentToTransactionSizesMapFile);
+    }
+
+    @Override
+    public CustomHandler newInstance() {
+        return new TransactionSAXHandler();
     }
 
     public void reset() {
@@ -118,7 +124,7 @@ public class TransactionSAXHandler extends DefaultHandler{
 
         if(inPatentAssignment&&qName.equals("conveyance-text")){
             isConveyanceText=false;
-            String text = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
+            String text = AssigneeTrimmer.standardizedAssignee(String.join("",documentPieces));
             if(text.contains("ASSIGNMENT OF ASSIGN")) isAssignorsInterest=true;
             else if(text.contains("SECURITY INTEREST")) isSecurityInterest=true;
             if(!(isSecurityInterest||isAssignorsInterest)) {
@@ -133,7 +139,7 @@ public class TransactionSAXHandler extends DefaultHandler{
 
         if(inDocumentID&&qName.equals("doc-number")) {
             isDocNumber = false;
-            String text = AssigneeTrimmer.cleanAssignee(String.join("",documentPieces));
+            String text = AssigneeTrimmer.standardizedAssignee(String.join("",documentPieces));
             currentPatents.add(text);
             documentPieces.clear();
 

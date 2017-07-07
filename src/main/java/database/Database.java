@@ -1,6 +1,7 @@
 package main.java.database;
 
-import main.java.handlers.InventionTitleSAXHandler;
+import main.java.handlers.AssignmentSAXHandler;
+import main.java.handlers.TransactionSAXHandler;
 import main.java.tools.*;
 import net.lingala.zip4j.core.ZipFile;
 
@@ -13,8 +14,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.concurrent.RecursiveAction;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by ehallmark on 1/3/17.

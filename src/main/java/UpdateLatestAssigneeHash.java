@@ -1,7 +1,7 @@
 package main.java;
 
 import main.java.database.Database;
-import main.java.tools.AssignmentSAXHandler;
+import main.java.handlers.AssignmentSAXHandler;
 
 import java.io.IOException;
 import java.util.List;
