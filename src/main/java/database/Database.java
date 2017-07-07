@@ -285,20 +285,25 @@ public class Database {
 
     public static void ingestRecords(String patentNumber, Collection<String> assigneeData, List<List<String>> documents) throws SQLException {
         if(patentNumber==null)return;
-        PreparedStatement ps = conn.prepareStatement("INSERT INTO paragraph_tokens (pub_doc_number,assignees,tokens) VALUES (?,?,?) ON CONFLICT DO NOTHING");
+        String queryPrefix = "INSERT INTO paragraph_tokens (pub_doc_number,assignees,tokens) VALUES ";
+        String querySuffix = " ON CONFLICT DO NOTHING";
+        String query = queryPrefix;
+        for(int i = 0; i < documents.size(); i++) {
+            query += "(?,?,?)";
+            if(i!=documents.size()-1)
+                query += ", ";
+        }
+        query += querySuffix;
+        PreparedStatement ps = conn.prepareStatement(query);
         final Collection<String> cleanAssigneeData = assigneeData==null ? Collections.emptySet() : assigneeData;
-        documents.forEach(doc->{
-            try {
-                ps.setString(1, patentNumber);
-                synchronized (conn) {
-                    ps.setArray(2, conn.createArrayOf("varchar", cleanAssigneeData.toArray()));
-                    ps.setArray(3, conn.createArrayOf("varchar", doc.toArray()));
-                }
-                ps.executeUpdate();
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
-        });
+        Array assigneeArray = conn.createArrayOf("varchar", cleanAssigneeData.toArray());
+        for(int i = 0; i < documents.size(); i++) {
+            List<String> doc = documents.get(i);
+            ps.setString(1+(i*3), patentNumber);
+            ps.setArray(2+(i*3), assigneeArray);
+            ps.setArray(3+(i*3), conn.createArrayOf("varchar", doc.toArray()));
+        }
+        ps.executeUpdate();
         ps.close();
     }
 
