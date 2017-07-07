@@ -11,8 +11,8 @@ import main.java.handlers.TransactionSAXHandler;
 public class UpdateAssignmentData {
 
     public static void main(String[] args) {
-        PatentGrantIterator iterator = Constants.DEFAULT_ASSIGNMENT_ITERATOR;
-        iterator.applyHandlers(new TransactionSAXHandler(), new AssignmentSAXHandler());
-        System.out.println("FINAL DATE: "+ iterator.startDate.toString());
+        //PatentGrantIterator iterator = Constants.DEFAULT_ASSIGNMENT_ITERATOR;
+        //iterator.applyHandlers(new TransactionSAXHandler(), new AssignmentSAXHandler());
+        //System.out.println("FINAL DATE: "+ iterator.startDate.toString());
     }
 }

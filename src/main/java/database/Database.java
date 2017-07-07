@@ -302,7 +302,7 @@ public class Database {
             }
         }
         try {
-            AssignmentSAXHandler.save();
+            //AssignmentSAXHandler.save();
         } catch(Exception e) {
             System.out.println("Unable to save assignee file...");
         }
@@ -406,7 +406,7 @@ public class Database {
             }
         }
         try {
-            TransactionSAXHandler.save();
+            //TransactionSAXHandler.save();
         } catch(Exception e) {
             System.out.println("Unable to save assignee file...");
         }
