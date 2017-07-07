@@ -31,6 +31,7 @@ public class SAXHandler extends CustomHandler{
     private Set<String> assignees= new HashSet<>();
     private static AtomicInteger cnt = new AtomicInteger(0);
     private static PhrasePreprocessor phrasePreprocessor = new PhrasePreprocessor();
+    private static final int wordLimit = 500;
 
     private void update() {
         if (pubDocNumber != null && !fullDocuments.isEmpty() && !shouldTerminate) {
@@ -129,7 +130,7 @@ public class SAXHandler extends CustomHandler{
 
         if(qName.equals("claim")||qName.equals("description")||qName.equals("abstract")){
             isWithinDocument=false;
-            List<String> tokens = tokenPieces.stream().flatMap(list->list.stream()).collect(Collectors.toList());
+            List<String> tokens = tokenPieces.stream().flatMap(list->list.stream()).limit(wordLimit).collect(Collectors.toList());
             if(tokens.size() > 5) {
                 fullDocuments.add(tokens);
             }
@@ -155,8 +156,10 @@ public class SAXHandler extends CustomHandler{
     public void characters(char ch[],int start,int length)throws SAXException{
         if((!shouldTerminate)&&(isWithinDocument||isDocNumber||isOrgname)){
             if(isWithinDocument) {
-                length=Math.min(length,10000); // avoid overflow
-                tokenPieces.add(extractTokens(new String(ch, start, length)));
+                if(tokenPieces.stream().collect(Collectors.summingInt(t->t.size())) < wordLimit){
+                    length = Math.min(length, wordLimit * 20); // avoid overflow
+                    tokenPieces.add(extractTokens(new String(ch, start, length)));
+                }
             } else {
                 documentPieces.add(new String(ch, start, length));
             }
@@ -166,7 +169,7 @@ public class SAXHandler extends CustomHandler{
 
     private static List<String> extractTokens(String toExtract,boolean phrases) {
         return Arrays.stream((phrases?phrasePreprocessor.preProcess(toExtract):toExtract).split("\\s+"))
-                .map(t->t.toLowerCase().replaceAll("[^a-z.]","")).filter(t->t.length()>0).limit(500)
+                .map(t->t.toLowerCase().replaceAll("[^a-z.]","")).filter(t->t.length()>0).limit(wordLimit)
                 .flatMap(t->Arrays.stream(t.split("\\."))).filter(t->t.length()>0).collect(Collectors.toList());
     }
 
