@@ -18,21 +18,22 @@ import java.util.stream.Collectors;
 
  */
 public class SAXHandler extends CustomHandler{
-    boolean isClaim=false;
-    boolean inPublicationReference=false;
-    boolean isDocNumber=false;
-    boolean inAssignee=false;
-    boolean isOrgname = false;
-    boolean shouldTerminate = false;
-    String pubDocNumber;
-    List<List<String>>fullDocuments=new ArrayList<>();
-    List<String>documentPieces=new ArrayList<>();
+    private boolean inPublicationReference=false;
+    private boolean isDocNumber=false;
+    private boolean inAssignee=false;
+    private boolean isOrgname = false;
+    private boolean isWithinDocument=false;
+    private boolean shouldTerminate = false;
+    private String pubDocNumber;
+    private List<List<String>>fullDocuments=new ArrayList<>();
+    private List<String>documentPieces=new ArrayList<>();
+    private List<List<String>>tokenPieces=new ArrayList<>();
     private Set<String> assignees= new HashSet<>();
     private static AtomicInteger cnt = new AtomicInteger(0);
     private static PhrasePreprocessor phrasePreprocessor = new PhrasePreprocessor();
 
     private void update() {
-        if (pubDocNumber != null && !fullDocuments.isEmpty()) {
+        if (pubDocNumber != null && !fullDocuments.isEmpty() && !shouldTerminate) {
             try {
                 Database.ingestRecords(pubDocNumber, assignees, fullDocuments);
             } catch(Exception e) {
@@ -43,14 +44,15 @@ public class SAXHandler extends CustomHandler{
 
     public void reset() {
         update();
-        isClaim=false;
         inPublicationReference=false;
         isDocNumber=false;
         inAssignee=false;
         isOrgname=false;
         shouldTerminate = false;
+        isWithinDocument=false;
         fullDocuments.clear();
         documentPieces.clear();
+        tokenPieces.clear();
         assignees.clear();
         pubDocNumber=null;
         if (cnt.getAndIncrement()%1000==0)
@@ -79,36 +81,36 @@ public class SAXHandler extends CustomHandler{
 
     public void startElement(String uri,String localName,String qName,
         Attributes attributes)throws SAXException{
+        if(shouldTerminate) return;
 
         //System.out.println("Start Element :" + qName);
 
-        if(qName.equalsIgnoreCase("publication-reference")){
+        if(qName.equals("publication-reference")){
             inPublicationReference=true;
         }
 
-        if(qName.equalsIgnoreCase("claim")){
-            isClaim=true;
+        if(qName.equals("claim")||qName.equals("description")||qName.equals("abstract")){
+            isWithinDocument=true;
         }
 
-        if(qName.equalsIgnoreCase("doc-number")&&inPublicationReference){
+        if(qName.equals("doc-number")&&inPublicationReference){
             isDocNumber=true;
         }
 
-        if(qName.toLowerCase().endsWith("assignee")) {
+        if(qName.endsWith("assignee")) {
             inAssignee=true;
         }
 
-        if(inAssignee&&qName.equalsIgnoreCase("orgname")) {
+        if(inAssignee&&qName.equals("orgname")) {
             isOrgname=true;
         }
     }
 
     public void endElement(String uri,String localName,
         String qName)throws SAXException{
+        if(shouldTerminate) return;
 
-        //System.out.println("End Element :" + qName);
-
-        if(qName.equalsIgnoreCase("doc-number")&&inPublicationReference){
+        if(qName.equals("doc-number")&&inPublicationReference){
             isDocNumber=false;
             pubDocNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             if(pubDocNumber.startsWith("0"))pubDocNumber = pubDocNumber.substring(1,pubDocNumber.length());
@@ -116,48 +118,55 @@ public class SAXHandler extends CustomHandler{
                 pubDocNumber=null;
                 shouldTerminate = true;
             }
+            tokenPieces.clear();
             documentPieces.clear();
         }
 
-        if(qName.equalsIgnoreCase("publication-reference")){
+        if(qName.equals("publication-reference")){
             inPublicationReference=false;
         }
 
-        if(qName.equalsIgnoreCase("claim")){
-            isClaim=false;
-            List<String> tokens = extractTokens(String.join(" ",documentPieces));
+        if(qName.equals("claim")||qName.equals("description")||qName.equals("abstract")){
+            isWithinDocument=false;
+            List<String> tokens = tokenPieces.stream().flatMap(list->list.stream()).collect(Collectors.toList());
             if(tokens.size() > 5) {
                 fullDocuments.add(tokens);
             }
+            tokenPieces.clear();
             documentPieces.clear();
         }
 
-        if(inAssignee&&qName.equalsIgnoreCase("orgname")) {
+        if(inAssignee&&qName.equals("orgname")) {
             isOrgname=false;
             String assignee = AssigneeTrimmer.standardizedAssignee(String.join(" ",documentPieces));
             if(assignee.length()>0) {
                 assignees.add(assignee);
             }
+            tokenPieces.clear();
             documentPieces.clear();
         }
 
-        if(qName.toLowerCase().endsWith("assignee")) {
+        if(qName.endsWith("assignee")) {
             inAssignee=false;
         }
     }
 
     public void characters(char ch[],int start,int length)throws SAXException{
-        if((!shouldTerminate)&&(isClaim||isDocNumber||isOrgname)){
-            documentPieces.add(new String(ch,start,length));
+        if((!shouldTerminate)&&(isWithinDocument||isDocNumber||isOrgname)){
+            if(isWithinDocument) {
+                length=Math.min(length,10000); // avoid overflow
+                tokenPieces.add(extractTokens(new String(ch, start, length)));
+            } else {
+                documentPieces.add(new String(ch, start, length));
+            }
         }
 
     }
 
     private static List<String> extractTokens(String toExtract,boolean phrases) {
-        String data = toExtract.toLowerCase().replaceAll("[^a-z ]"," ");
-        return Arrays.stream((phrases?phrasePreprocessor.preProcess(data):data).split("\\s+"))
-                .filter(t->t!=null&&t.length()>0).limit(10000)
-                .collect(Collectors.toList());
+        return Arrays.stream((phrases?phrasePreprocessor.preProcess(toExtract):toExtract).split("\\s+"))
+                .filter(t->t!=null&&t.length()>0).map(t->t.toLowerCase().replaceAll("[^a-z.]","")).limit(500)
+                .flatMap(t->Arrays.stream(t.split("\\."))).collect(Collectors.toList());
     }
 
     private static List<String> extractTokens(String toExtract) {
