@@ -24,6 +24,7 @@ public class SAXHandler extends CustomHandler{
     private boolean isOrgname = false;
     private boolean isWithinDocument=false;
     private boolean shouldTerminate = false;
+    private int claimDepth = 0;
     private String pubDocNumber;
     private List<List<String>>fullDocuments=new ArrayList<>();
     private List<String>documentPieces=new ArrayList<>();
@@ -56,6 +57,7 @@ public class SAXHandler extends CustomHandler{
         tokenPieces.clear();
         assignees.clear();
         pubDocNumber=null;
+        claimDepth = 0;
         if (cnt.getAndIncrement()%10000==0)
             try {
                 Database.commit();
@@ -91,8 +93,9 @@ public class SAXHandler extends CustomHandler{
             inPublicationReference=true;
         }
 
-        if(qName.equals("claim")||qName.equals("description")||qName.equals("abstract")){
+        if(qName.equals("claim")||qName.equals("abstract")){
             isWithinDocument=true;
+            if(qName.equals("claim")) claimDepth++;
         }
 
         if(qName.equals("doc-number")&&inPublicationReference){
@@ -128,14 +131,18 @@ public class SAXHandler extends CustomHandler{
             inPublicationReference=false;
         }
 
-        if(qName.equals("claim")||qName.equals("description")||qName.equals("abstract")){
-            isWithinDocument=false;
-            List<String> tokens = tokenPieces.stream().flatMap(list->list.stream()).limit(wordLimit).collect(Collectors.toList());
-            if(tokens.size() > 5) {
-                fullDocuments.add(tokens);
+        if(qName.equals("claim")||qName.equals("abstract")){
+            claimDepth--;
+            if(claimDepth<=0) {
+                isWithinDocument = false;
+                List<String> tokens = tokenPieces.stream().flatMap(list -> list.stream()).limit(wordLimit).collect(Collectors.toList());
+                if (tokens.size() > 5) {
+                    fullDocuments.add(tokens);
+                }
+                tokenPieces.clear();
+                documentPieces.clear();
+                claimDepth=0;
             }
-            tokenPieces.clear();
-            documentPieces.clear();
         }
 
         if(inAssignee&&qName.equals("orgname")) {
@@ -156,7 +163,7 @@ public class SAXHandler extends CustomHandler{
     public void characters(char ch[],int start,int length)throws SAXException{
         if((!shouldTerminate)&&(isWithinDocument||isDocNumber||isOrgname)){
             if(isWithinDocument) {
-                if(tokenPieces.stream().collect(Collectors.summingInt(t->t.size())) < wordLimit){
+                if(claimDepth <= 1 && tokenPieces.stream().collect(Collectors.summingInt(t->t.size())) < wordLimit){
                     length = Math.min(length, wordLimit * 20); // avoid overflow
                     tokenPieces.add(extractTokens(new String(ch, start, length)));
                 }
