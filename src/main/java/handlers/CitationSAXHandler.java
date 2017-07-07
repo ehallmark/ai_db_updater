@@ -290,7 +290,7 @@ public class CitationSAXHandler extends CustomHandler{
 
         if(qName.equals("doc-number")&&inCitation) {
             isCitedDocNumber=false;
-            docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9/]","");
+            docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             documentPieces.clear();
         }
 
@@ -302,7 +302,7 @@ public class CitationSAXHandler extends CustomHandler{
 
         if(inRelatedDoc&&qName.equals("doc-number")) {
             isRelatedDocNumber=false;
-            docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9/]","");
+            docNumber=String.join("",documentPieces).replaceAll("[^A-Z0-9]","");
             documentPieces.clear();
         }
 
@@ -338,14 +338,17 @@ public class CitationSAXHandler extends CustomHandler{
 
     private static String handleOtherDoc(String docNumber, String docKind, String docCountry) {
         if(docNumber.length()<=6 && docCountry.equals("US")) return null;
-        if(docKind.startsWith("A") && docNumber.length() <= 8 && docCountry.equals("US")) {
-            // 23/352355 formatting
-            docNumber = docNumber.substring(0,docNumber.length()-6)+"/"+docNumber.substring(docNumber.length()-6);
-        } else if (docKind.startsWith("B") && docCountry.equals("US")) {
-            if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
+        if(docCountry.equals("US")) {
+            if ((docKind.startsWith("A")||docKind.isEmpty()) && docNumber.length() == 8) {
+                // 23/352355 formatting
+                docNumber = docNumber.substring(0, docNumber.length() - 6) + "/" + docNumber.substring(docNumber.length() - 6);
+            } else if (docKind.startsWith("B")) {
+                if (docNumber.startsWith("0")) docNumber = docNumber.substring(1, docNumber.length());
+            } else if(docNumber.length()!=11 && !docNumber.startsWith("20")) {
+                return null;
+            }
         }
         if(! docCountry.equals("US") && !docNumber.startsWith(docCountry)) docNumber=docCountry+docNumber;
-        //System.out.println("Type "+docKind+": "+docNumber);
         return docNumber;
     }
 
