@@ -345,7 +345,7 @@ public class CitationSAXHandler extends CustomHandler{
             if(docNumber.startsWith("0"))docNumber = docNumber.substring(1,docNumber.length());
         }
         if(! docCountry.equals("US") && !docNumber.startsWith(docCountry)) docNumber=docCountry+docNumber;
-        System.out.println("Type "+docKind+": "+docNumber);
+        //System.out.println("Type "+docKind+": "+docNumber);
         return docNumber;
     }
 
